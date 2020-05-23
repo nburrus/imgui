@@ -40,6 +40,9 @@ IMGUI_IMPL_API void     ImGui_ImplOpenGL3_DestroyDeviceObjects();
 //#define IMGUI_IMPL_OPENGL_ES2     // Auto-detected on Emscripten
 //#define IMGUI_IMPL_OPENGL_ES3     // Auto-detected on iOS/Android
 
+#include <OpenGL/gl3.h>
+#define IMGUI_IMPL_OPENGL_LOADER_CUSTOM <OpenGL/gl3ext.h>
+
 // Desktop OpenGL: attempt to detect default GL loader based on available header files.
 // If auto-detection fails or doesn't select the same GL loader file as used by your application,
 // you are likely to get a crash in ImGui_ImplOpenGL3_Init().
