@@ -13,6 +13,8 @@
 #include "imgui/imgui_impl_osx.h"
 #include "imgui/imgui_impl_opengl3.h"
 
+#include "implot/implot.h"
+
 #include <stdio.h>
 #import <Cocoa/Cocoa.h>
 #import <OpenGL/gl3.h>
@@ -55,12 +57,16 @@
 
     // Global data for the demo
     static bool show_demo_window = true;
+    static bool show_implot_demo_window = true;
     static bool show_another_window = false;
     static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
     if (show_demo_window)
         ImGui::ShowDemoWindow(&show_demo_window);
+    
+    if (show_implot_demo_window)
+        ImPlot::ShowDemoWindow();
 
     // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
     {
@@ -71,6 +77,7 @@
 
         ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
         ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
+        ImGui::Checkbox("Implot Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
         ImGui::Checkbox("Another Window", &show_another_window);
 
         ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f

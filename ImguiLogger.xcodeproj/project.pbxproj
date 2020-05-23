@@ -16,6 +16,8 @@
 		2D809A3C2479AEA7007845B6 /* imgui_impl_osx.mm in Sources */ = {isa = PBXBuildFile; fileRef = 2D809A352479AEA7007845B6 /* imgui_impl_osx.mm */; };
 		2D809A3D2479AEA7007845B6 /* imgui_demo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2D809A372479AEA7007845B6 /* imgui_demo.cpp */; };
 		2D809A3E2479AEA7007845B6 /* imgui_draw.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2D809A382479AEA7007845B6 /* imgui_draw.cpp */; };
+		2D809A4C2479B0CD007845B6 /* implot.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2D809A482479B0CD007845B6 /* implot.cpp */; };
+		2D809A4D2479B0CD007845B6 /* implot_demo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2D809A4A2479B0CD007845B6 /* implot_demo.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -50,6 +52,11 @@
 		2D809A362479AEA7007845B6 /* imstb_rectpack.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = imstb_rectpack.h; sourceTree = "<group>"; };
 		2D809A372479AEA7007845B6 /* imgui_demo.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = imgui_demo.cpp; sourceTree = "<group>"; };
 		2D809A382479AEA7007845B6 /* imgui_draw.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = imgui_draw.cpp; sourceTree = "<group>"; };
+		2D809A472479B0CD007845B6 /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
+		2D809A482479B0CD007845B6 /* implot.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = implot.cpp; sourceTree = "<group>"; };
+		2D809A492479B0CD007845B6 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		2D809A4A2479B0CD007845B6 /* implot_demo.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = implot_demo.cpp; sourceTree = "<group>"; };
+		2D809A4B2479B0CD007845B6 /* implot.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = implot.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -68,6 +75,7 @@
 		2D80988D2479A68E007845B6 = {
 			isa = PBXGroup;
 			children = (
+				2D809A462479B0CD007845B6 /* implot */,
 				2D809A2A2479AEA7007845B6 /* imgui */,
 				2D8098992479A68E007845B6 /* main.mm */,
 				2D8098972479A68E007845B6 /* Products */,
@@ -102,16 +110,28 @@
 				2D809A2E2479AEA7007845B6 /* imgui_widgets.cpp */,
 				2D809A2F2479AEA7007845B6 /* imstb_truetype.h */,
 				2D809A302479AEA7007845B6 /* imgui_impl_osx.h */,
+				2D809A352479AEA7007845B6 /* imgui_impl_osx.mm */,
 				2D809A312479AEA7007845B6 /* imgui_impl_opengl3.h */,
+				2D809A342479AEA7007845B6 /* imgui_impl_opengl3.cpp */,
 				2D809A322479AEA7007845B6 /* imgui.cpp */,
 				2D809A332479AEA7007845B6 /* imgui_internal.h */,
-				2D809A342479AEA7007845B6 /* imgui_impl_opengl3.cpp */,
-				2D809A352479AEA7007845B6 /* imgui_impl_osx.mm */,
 				2D809A362479AEA7007845B6 /* imstb_rectpack.h */,
 				2D809A372479AEA7007845B6 /* imgui_demo.cpp */,
 				2D809A382479AEA7007845B6 /* imgui_draw.cpp */,
 			);
 			path = imgui;
+			sourceTree = "<group>";
+		};
+		2D809A462479B0CD007845B6 /* implot */ = {
+			isa = PBXGroup;
+			children = (
+				2D809A472479B0CD007845B6 /* LICENSE */,
+				2D809A482479B0CD007845B6 /* implot.cpp */,
+				2D809A492479B0CD007845B6 /* README.md */,
+				2D809A4A2479B0CD007845B6 /* implot_demo.cpp */,
+				2D809A4B2479B0CD007845B6 /* implot.h */,
+			);
+			path = implot;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -171,11 +191,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2D809A4C2479B0CD007845B6 /* implot.cpp in Sources */,
 				2D809A3C2479AEA7007845B6 /* imgui_impl_osx.mm in Sources */,
 				2D809A3E2479AEA7007845B6 /* imgui_draw.cpp in Sources */,
 				2D80989A2479A68E007845B6 /* main.mm in Sources */,
 				2D809A3D2479AEA7007845B6 /* imgui_demo.cpp in Sources */,
 				2D809A392479AEA7007845B6 /* imgui_widgets.cpp in Sources */,
+				2D809A4D2479B0CD007845B6 /* implot_demo.cpp in Sources */,
 				2D809A3B2479AEA7007845B6 /* imgui_impl_opengl3.cpp in Sources */,
 				2D809A3A2479AEA7007845B6 /* imgui.cpp in Sources */,
 			);
