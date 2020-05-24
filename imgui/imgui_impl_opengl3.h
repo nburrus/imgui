@@ -40,6 +40,7 @@ IMGUI_IMPL_API void     ImGui_ImplOpenGL3_DestroyDeviceObjects();
 //#define IMGUI_IMPL_OPENGL_ES2     // Auto-detected on Emscripten
 //#define IMGUI_IMPL_OPENGL_ES3     // Auto-detected on iOS/Android
 
+#define GL_SILENCE_DEPRECATION 1
 #include <OpenGL/gl3.h>
 #define IMGUI_IMPL_OPENGL_LOADER_CUSTOM <OpenGL/gl3ext.h>
 
