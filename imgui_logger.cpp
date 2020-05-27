@@ -17,6 +17,20 @@ namespace Logger
 
 Context* g_Context = new Context();
 
+void SetPerFrameCallback(const char* callbackName,
+                         const std::function<void(void)>& callback)
+{
+    std::lock_guard<std::mutex> _ (g_Context->concurrentTasks.lock);
+    if (callback)
+    {
+        g_Context->concurrentTasks.tasksToRepeatForEachFrame[callbackName] = callback;
+    }
+    else
+    {
+        g_Context->concurrentTasks.tasksToRepeatForEachFrame.erase(callbackName);
+    }
+}
+
 void UpdateImage(const char* windowName,
                  const ImagePtr& image)
 {
@@ -68,13 +82,21 @@ void AddPlotValue(const char* windowName,
 
 void Render()
 {
-    std::vector<std::function<void(void)>> tasksToRun;
     {
         std::lock_guard<std::mutex> _ (g_Context->concurrentTasks.lock);
-        tasksToRun.swap (g_Context->concurrentTasks.tasksForNextFrame);
+        g_Context->cache.tasksToRun.insert (g_Context->cache.tasksToRun.begin(),
+                                            g_Context->concurrentTasks.tasksForNextFrame.begin(),
+                                            g_Context->concurrentTasks.tasksForNextFrame.end());
+        g_Context->concurrentTasks.tasksForNextFrame.clear();
+        
+        for (const auto& it : g_Context->concurrentTasks.tasksToRepeatForEachFrame)
+            g_Context->cache.tasksToRun.push_back(it.second);
     }
-    for (auto& task : tasksToRun)
+    
+    for (auto& task : g_Context->cache.tasksToRun)
         task();
+    
+    g_Context->cache.tasksToRun.clear();
     
     for (auto& window : g_Context->windows)
     {

@@ -26,6 +26,10 @@ struct Image
 };
 using ImagePtr = std::shared_ptr<Image>;
 
+// Run arbitrary ImGui code for each frame (e.g add UI element).
+void SetPerFrameCallback(const char* callbackName,
+                         const std::function<void(void)>& callback);
+
 void UpdateImage(const char* windowName,
                  const ImagePtr& image);
 

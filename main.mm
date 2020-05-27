@@ -11,6 +11,7 @@
 
 #include "imgui_logger.h"
 #include "imgui_logger_view.h"
+#include "imgui.h"
 
 #include <thread>
 
@@ -38,7 +39,7 @@
     NSRect viewRect = NSMakeRect(100.0, 100.0, 100.0 + 1280.0, 100 + 720.0);
 
     _window = [[NSWindow alloc] initWithContentRect:viewRect styleMask:NSWindowStyleMaskTitled|NSWindowStyleMaskMiniaturizable|NSWindowStyleMaskResizable|NSWindowStyleMaskClosable backing:NSBackingStoreBuffered defer:YES];
-    [_window setTitle:@"Dear ImGui OSX+OpenGL2 Example"];
+    [_window setTitle:@"ImGui::Logger Example"];
     [_window setAcceptsMouseMovedEvents:YES];
     [_window setOpaque:YES];
     [_window makeKeyAndOrderFront:NSApp];
@@ -100,8 +101,19 @@ void workerThread1()
     }
 }
 
+#define IdentityMacro(Code)
+
 void workerThread2()
 {
+    int offset = 0; // could use atomic, but we don't care for quick&dirty tests.
+    ImGui::Logger::SetPerFrameCallback("ModifyOffset", [&offset]() {
+        if (ImGui::Begin("SmallImage"))
+        {
+            ImGui::SliderInt("Adjust offset", &offset, 0, 320);
+        }
+        ImGui::End();
+    });
+    
     int i = 0;
     while (true)
     {
@@ -114,7 +126,7 @@ void workerThread2()
         for (int c = 0; c < imagePtr->width; ++c)
         {
             const int idx = r*imagePtr->bytesPerRow + c;
-            imagePtr->data[idx] = (c+r+i)%255;
+            imagePtr->data[idx] = (c+r+offset)%255;
         }
         
         ImGui::Logger::UpdateImage("SmallImage", imagePtr);
@@ -125,6 +137,8 @@ void workerThread2()
         ++i;
         std::this_thread::sleep_for(std::chrono::milliseconds(40));
     }
+    
+    ImGui::Logger::SetPerFrameCallback("ModifyOffset", nullptr);
 }
 
 -(void)applicationDidFinishLaunching:(NSNotification *)aNotification

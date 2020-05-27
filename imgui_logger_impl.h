@@ -20,6 +20,8 @@
 
 #include <unordered_map>
 
+#include <map>
+
 #define GL_SILENCE_DEPRECATION 1
 
 namespace ImGui
@@ -247,7 +249,13 @@ struct Context
     {
         std::mutex lock;
         std::vector<std::function<void(void)>> tasksForNextFrame;
+        std::map<std::string, std::function<void(void)>> tasksToRepeatForEachFrame;
     } concurrentTasks;
+        
+    // Cache to avoid reallocating data on every frame.
+    struct {
+        std::vector<std::function<void(void)>> tasksToRun;
+    } cache;
     
     std::vector<std::unique_ptr<Window>> windows;
 };
