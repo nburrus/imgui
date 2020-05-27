@@ -40,13 +40,30 @@ void UpdateImage(const char* windowName,
     }
 }
 
-void AddPlotValue(const char* window,
-                  const char* group,
+void AddPlotValue(const char* windowName,
+                  const char* groupName,
                   double yValue,
                   double xValue)
 {
-//    PlotWindow* plotWindow = GetOrCreateWindow<PlotWindow> (windowName);
-//    plotWindow->addValue (window, group, yValue, xValue);
+    PlotWindow* plotWindow = FindWindow<PlotWindow> (windowName);
+    
+    // The window exists, just update the data.
+    if (plotWindow)
+    {
+        plotWindow->AddPlotValue(groupName, yValue, xValue);
+        return;
+    }
+    
+    // Need to create it, enqueue that in the list of tasks for the next frame;
+    {
+        std::lock_guard<std::mutex> _ (g_Context->concurrentTasks.lock);
+        std::string windowNameCopy = windowName;
+        std::string groupNameCopy = groupName;
+        g_Context->concurrentTasks.tasksForNextFrame.emplace_back([windowNameCopy,groupNameCopy,xValue,yValue](){
+            PlotWindow* plotWindow = FindOrCreateWindow<PlotWindow>(windowNameCopy.c_str());
+            plotWindow->AddPlotValue(groupNameCopy.c_str(), yValue, xValue);
+        });
+    }
 }
 
 void Render()

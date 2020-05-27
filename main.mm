@@ -89,6 +89,12 @@ void workerThread1()
         
         ImGui::Logger::UpdateImage("VGAImage", imagePtr);
         
+        for (int k = 0; k < 10; ++k)
+        {
+            ImGui::Logger::AddPlotValue(("PlotN - " + std::to_string(k)).c_str(), "Live", log(i+1+k), i);
+            ImGui::Logger::AddPlotValue(("PlotN - " + std::to_string(k)).c_str(), "GT", log(i+1+k)/2.f, i);
+        }
+        
         ++i;
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
@@ -112,6 +118,10 @@ void workerThread2()
         }
         
         ImGui::Logger::UpdateImage("SmallImage", imagePtr);
+        
+        ImGui::Logger::AddPlotValue("Plot1", "Live", log(i*i + 1), i);
+        ImGui::Logger::AddPlotValue("Plot1", "GT", log(i*i + 1) + 1, i);
+        
         ++i;
         std::this_thread::sleep_for(std::chrono::milliseconds(40));
     }
