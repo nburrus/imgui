@@ -114,7 +114,7 @@
     [[self openGLContext] flushBuffer];
     
     if (!animationTimer)
-        animationTimer = [NSTimer scheduledTimerWithTimeInterval:0.017 target:self selector:@selector(animationTimerFired:) userInfo:nil repeats:YES];
+        animationTimer = [NSTimer scheduledTimerWithTimeInterval:0.033 target:self selector:@selector(animationTimerFired:) userInfo:nil repeats:YES];
         }
 
 -(void)reshape
