@@ -325,7 +325,18 @@ public:
                 ImGui::BulletText("%s", cat.name.c_str());
                 for (auto& props : cat.windowProperties)
                 {
+                    const bool disabled = (props.window == nullptr);
+                    if (disabled)
+                    {
+                        ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+                        ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+                    }
                     ImGui::Checkbox(props.name.c_str(), &props.isVisible);
+                    if (disabled)
+                    {
+                        ImGui::PopItemFlag();
+                        ImGui::PopStyleVar();
+                    }
                 }
             }
         }
