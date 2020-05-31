@@ -34,18 +34,26 @@ class Window;
 struct WindowData
 {
     static const char* defaultCategoryName() { return "Unsorted"; }
-    
+
     std::string name;
     ImGuiID id = 0; // == ImHashStr(name)
-    
-    std::string category = defaultCategoryName();
-    ImVec2 preferredSize = ImVec2(320,240);
-    std::string helpString = "No help specified";
-    bool isVisible = true;
     
     // Can be nullptr if no window was yet created, but properties were specified.
     Window* window = nullptr;
     
+    std::string category = defaultCategoryName();
+    
+    ImVec2 preferredSize = ImVec2(320,240);
+    std::string helpString = "No help specified";
+    bool isVisible = true;
+    
+    struct
+    {
+        bool hasData = false;
+        ImVec2 pos = ImVec2(0,0);
+        ImVec2 size = ImVec2(0,0);
+    } layoutUpdateOnNextFrame;
+        
     std::map<std::string, std::function<void(void)>> preRenderCallbacks;
 };
 
@@ -299,9 +307,11 @@ public:
     
     void Render()
     {
+        const int windowListWidth = 200;
+        
         auto& IO = ImGui::GetIO();
         ImGui::SetNextWindowPos(ImVec2(0,0), ImGuiCond_Once);
-        ImGui::SetNextWindowSize(ImVec2(200, IO.DisplaySize.y), ImGuiCond_Once);
+        ImGui::SetNextWindowSize(ImVec2(windowListWidth, IO.DisplaySize.y), ImGuiCond_Once);
         if (ImGui::Begin("Window List"))
         {
             if (ImGui::Button("Hide All"))
@@ -320,7 +330,22 @@ public:
             ImGui::SameLine();
             if (ImGui::Button("Tile Windows"))
             {
-                // FIXME: implement.
+                int nextCol = 0;
+                int nextRow = 0;
+                for (auto& winData : _windowsData)
+                {
+                    if (!winData->isVisible)
+                        continue;
+                    winData->layoutUpdateOnNextFrame.size = winData->preferredSize;
+                    winData->layoutUpdateOnNextFrame.pos = ImVec2(nextCol*320 + windowListWidth, nextRow*240);
+                    winData->layoutUpdateOnNextFrame.hasData = true;
+                    ++nextCol;
+                    if (nextCol == 4)
+                    {
+                        nextCol = 0;
+                        ++nextRow;
+                    }
+                }
             }
             
             for (auto& cat : _windowsPerCategory)
@@ -362,24 +387,29 @@ public:
         }
         ImGui::End();
         
-        for (auto& cat : _windowsPerCategory)
+        for (auto& winData : _windowsData)
         {
-            for (auto& winData : cat.windows)
+            if (winData->window && winData->isVisible)
             {
-                if (winData->window && winData->isVisible)
+                if (winData->layoutUpdateOnNextFrame.hasData)
                 {
-                    if (!winData->preRenderCallbacks.empty())
-                    {
-                        if (ImGui::Begin(winData->name.c_str()))
-                        {
-                            for (const auto& it : winData->preRenderCallbacks)
-                                it.second();
-                        }
-                        ImGui::End();
-                    }
-
-                    winData->window->Render();
+                    ImGui::SetNextWindowPos(winData->layoutUpdateOnNextFrame.pos, ImGuiCond_Always);
+                    ImGui::SetNextWindowSize(winData->layoutUpdateOnNextFrame.size, ImGuiCond_Always);
+                    ImGui::SetNextWindowCollapsed(false, ImGuiCond_Always);
+                    winData->layoutUpdateOnNextFrame = {}; // reset it.
                 }
+                
+                if (!winData->preRenderCallbacks.empty())
+                {
+                    if (ImGui::Begin(winData->name.c_str()))
+                    {
+                        for (const auto& it : winData->preRenderCallbacks)
+                            it.second();
+                    }
+                    ImGui::End();
+                }
+                
+                winData->window->Render();
             }
         }
     }
