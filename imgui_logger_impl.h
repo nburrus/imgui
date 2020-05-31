@@ -33,7 +33,7 @@ class Window
 {
 public:
     Window (const char* c_name)
-    : name (c_name), id(ImHashStr(c_name)), isVisible(false)
+    : name (c_name), id(ImHashStr(c_name))
     {}
     
     virtual ~Window ()
@@ -44,7 +44,6 @@ public:
 public:
     ImGuiID id;
     std::string name;
-    bool isVisible;
 };
 
 class ImageWindow : public Window
@@ -235,6 +234,177 @@ private:
     } _dataBounds; // across all groups.
 };
 
+struct WindowProperties
+{
+    static const char* defaultCategoryName() { return "Unsorted"; }
+    
+    std::string name;
+    std::string category = defaultCategoryName();
+    ImGuiID id = 0;
+    ImVec2 preferredSize = ImVec2(320,240);
+    std::string helpString = "No help specified";
+    bool isVisible = true;
+    Window* window = nullptr;
+    
+    std::map<std::string, std::function<void(void)>> extraRenderCallbacks;
+};
+
+struct WindowCategory
+{
+    std::string name;
+    std::vector<WindowProperties> windowProperties;
+};
+
+class WindowListManager
+{
+public:
+    WindowProperties& AddWindow (Window* window, const std::string& categoryName)
+    {
+        auto& props = SetWindowCategory(window->name, categoryName);
+        props.window = window;
+        return props;
+    }
+    
+    // Could take a single set with a Json to know which properties to update.
+    WindowProperties& SetWindowCategory (const std::string& windowName, const std::string& category)
+    {
+        auto& props = FindOrCreatePropertiesForWindow(windowName, category);
+        if (props.category == category)
+            return props;
+        
+        return ChangeWindowCategory(props, category);
+    }
+    
+    WindowProperties& SetWindowPreferredSize (const std::string& windowName, const ImVec2& preferredSize)
+    {
+        auto& props = FindOrCreatePropertiesForWindow(windowName, WindowProperties::defaultCategoryName());
+        props.preferredSize = preferredSize;
+        return props;
+    }
+    
+    WindowProperties& SetWindowHelpString (const std::string& windowName, const std::string& helpString)
+    {
+        auto& props = FindOrCreatePropertiesForWindow(windowName, WindowProperties::defaultCategoryName());
+        props.helpString = helpString;
+        return props;
+    }
+    
+    WindowProperties& FindOrCreatePropertiesForWindow (const std::string& windowName,
+                                                       const std::string& categoryNameIfNeedToCreateIt)
+    {
+        ImGuiID windowID = ImHashStr(windowName.c_str());
+        WindowProperties* props = findPropertiesForWindow(windowID);
+        if (props != nullptr)
+            return *props;
+        return createDefaultPropertiesForWindow(windowName, categoryNameIfNeedToCreateIt);
+    }
+    
+    void Render()
+    {
+        auto& IO = ImGui::GetIO();
+        ImGui::SetNextWindowPos(ImVec2(0,0), ImGuiCond_Once);
+        ImGui::SetNextWindowSize(ImVec2(200, IO.DisplaySize.y), ImGuiCond_Once);
+        if (ImGui::Begin("Window List"))
+        {
+            if (ImGui::Button("Hide All"))
+            {
+                for (auto& cat : _windowsPerCategory)
+                    for (auto& props : cat.windowProperties)
+                        props.isVisible = false;
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Show All"))
+            {
+                for (auto& cat : _windowsPerCategory)
+                for (auto& props : cat.windowProperties)
+                    props.isVisible = true;
+            }
+            
+            for (auto& cat : _windowsPerCategory)
+            {
+                ImGui::BulletText("%s", cat.name.c_str());
+                for (auto& props : cat.windowProperties)
+                {
+                    ImGui::Checkbox(props.name.c_str(), &props.isVisible);
+                }
+            }
+        }
+        ImGui::End();
+        
+        for (auto& cat : _windowsPerCategory)
+        {
+            for (auto& props : cat.windowProperties)
+            {
+                if (props.window && props.isVisible)
+                {
+                    if (!props.extraRenderCallbacks.empty())
+                    {
+                        if (ImGui::Begin(props.name.c_str()))
+                        {
+                            for (const auto& it : props.extraRenderCallbacks)
+                                it.second();
+                        }
+                        ImGui::End();
+                    }
+
+                    props.window->Render();
+                }
+            }
+        }
+    }
+    
+private:
+    WindowProperties& createDefaultPropertiesForWindow (const std::string& windowName, const std::string& categoryName)
+    {
+        auto& cat = findOrCreateCategory(categoryName);
+        cat.windowProperties.emplace_back();
+        auto& properties = cat.windowProperties.back();
+        properties.name = windowName;
+        properties.id = ImHashStr(windowName.c_str());
+        properties.category = categoryName;
+        return properties;
+    }
+    
+    WindowCategory& findOrCreateCategory(const std::string& categoryName)
+    {
+        for (auto& cat : _windowsPerCategory)
+            if (cat.name == categoryName)
+                return cat;
+        _windowsPerCategory.push_back(WindowCategory());
+        _windowsPerCategory.back().name = categoryName;
+        return _windowsPerCategory.back();
+    }
+    
+    WindowProperties* findPropertiesForWindow (const ImGuiID& windowID)
+    {
+        for (auto& cat : _windowsPerCategory)
+            for (auto& prop : cat.windowProperties)
+                if (prop.id == windowID)
+                    return &prop;
+        return nullptr;
+    }
+        
+    WindowProperties& ChangeWindowCategory(WindowProperties& properties, const std::string& newCategoryName)
+    {
+        auto& oldCat = findOrCreateCategory(properties.category);
+        
+        auto oldCatIt = std::find_if(oldCat.windowProperties.end(), oldCat.windowProperties.end(), [&](WindowProperties& p) {
+            return &properties == &p;
+        });
+        
+        auto newProperties = properties;
+        newProperties.category = newCategoryName;
+        oldCat.windowProperties.erase(oldCatIt);
+        
+        auto& newCat = findOrCreateCategory(newCategoryName);
+        newCat.windowProperties.push_back (newProperties);
+        return newCat.windowProperties.back();
+    }
+    
+private:
+    std::vector<WindowCategory> _windowsPerCategory;
+};
+
 struct Context
 {
     // Might get accessed as read-only by other threads.
@@ -244,7 +414,7 @@ struct Context
         std::mutex lock;
         ImGuiStorage windowsByID;
     } concurrentWindows;
-    
+        
     struct
     {
         std::mutex lock;
@@ -258,9 +428,16 @@ struct Context
     } cache;
     
     std::vector<std::unique_ptr<Window>> windows;
+    WindowListManager windowListManager;
 };
 
 extern Context* g_Context;
+
+void RunOnceInImGuiThread(const std::function<void(void)>& f)
+{
+    std::lock_guard<std::mutex> _ (g_Context->concurrentTasks.lock);
+    g_Context->concurrentTasks.tasksForNextFrame.emplace_back(f);
+}
 
 inline Window* FindWindowById(ImGuiID id)
 {
@@ -284,6 +461,7 @@ WindowType* FindWindow (const char* name)
     return imWindow;
 }
 
+// Only from the ImGui thread.
 template <class WindowType>
 WindowType* FindOrCreateWindow (const char* name)
 {
@@ -295,6 +473,7 @@ WindowType* FindOrCreateWindow (const char* name)
     concreteWindow = new WindowType(name);
     Window* window = concreteWindow;
     g_Context->windows.emplace_back(std::unique_ptr<Window>(window));
+    g_Context->windowListManager.AddWindow(window, WindowProperties::defaultCategoryName());
     
     {
         std::lock_guard<std::mutex> _(g_Context->concurrentWindows.lock);

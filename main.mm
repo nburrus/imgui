@@ -53,8 +53,8 @@
     NSMenu* appMenu;
     NSMenuItem* menuItem;
 
-    appMenu = [[NSMenu alloc] initWithTitle:@"Dear ImGui OSX+OpenGL2 Example"];
-    menuItem = [appMenu addItemWithTitle:@"Quit Dear ImGui OSX+OpenGL2 Example" action:@selector(terminate:) keyEquivalent:@"q"];
+    appMenu = [[NSMenu alloc] initWithTitle:@"Imgui Logger"];
+    menuItem = [appMenu addItemWithTitle:@"Imgui Logger" action:@selector(terminate:) keyEquivalent:@"q"];
     [menuItem setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
 
     menuItem = [[NSMenuItem alloc] init];
@@ -106,12 +106,8 @@ void workerThread1()
 void workerThread2()
 {
     int offset = 0; // could use atomic, but we don't care for quick&dirty tests.
-    ImGui::Logger::SetPerFrameCallback("ModifyOffset", [&offset]() {
-        if (ImGui::Begin("SmallImage"))
-        {
-            ImGui::SliderInt("Adjust offset", &offset, 0, 320);
-        }
-        ImGui::End();
+    ImGui::Logger::SetWindowRenderExtraCallback("SmallImage", "ModifyOffset", [&offset]() {
+        ImGui::SliderInt("Adjust offset", &offset, 0, 320);
     });
     
     int i = 0;
@@ -138,7 +134,7 @@ void workerThread2()
         std::this_thread::sleep_for(std::chrono::milliseconds(40));
     }
     
-    ImGui::Logger::SetPerFrameCallback("ModifyOffset", nullptr);
+    ImGui::Logger::SetWindowRenderExtraCallback("SmallImage", "ModifyOffset", nullptr);
 }
 
 -(void)applicationDidFinishLaunching:(NSNotification *)aNotification

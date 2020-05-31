@@ -30,6 +30,10 @@ using ImagePtr = std::shared_ptr<Image>;
 void SetPerFrameCallback(const char* callbackName,
                          const std::function<void(void)>& callback);
 
+void SetWindowRenderExtraCallback(const char* windowName,
+                                  const char* callbackName,
+                                  const std::function<void(void)>& callback);
+
 void UpdateImage(const char* windowName,
                  const ImagePtr& image);
 

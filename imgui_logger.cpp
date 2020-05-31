@@ -31,6 +31,25 @@ void SetPerFrameCallback(const char* callbackName,
     }
 }
 
+void SetWindowRenderExtraCallback(const char* windowName,
+                                  const char* callbackName,
+                                  const std::function<void(void)>& callback)
+{
+    std::string windowNameCopy = windowName;
+    std::string callbackNameCopy = callbackName;
+    RunOnceInImGuiThread([windowNameCopy,callbackNameCopy,callback]() {
+        auto& props = g_Context->windowListManager.FindOrCreatePropertiesForWindow(windowNameCopy, WindowProperties::defaultCategoryName());
+        if (callback)
+        {
+            props.extraRenderCallbacks[callbackNameCopy] = callback;
+        }
+        else
+        {
+            props.extraRenderCallbacks.erase(callbackNameCopy);
+        }
+    });
+}
+
 void UpdateImage(const char* windowName,
                  const ImagePtr& image)
 {
@@ -44,14 +63,11 @@ void UpdateImage(const char* windowName,
     }
     
     // Need to create it, enqueue that in the list of tasks for the next frame;
-    {
-        std::lock_guard<std::mutex> _ (g_Context->concurrentTasks.lock);
-        std::string windowNameCopy = windowName;
-        g_Context->concurrentTasks.tasksForNextFrame.emplace_back([windowNameCopy,image](){
-            ImageWindow* imWindow = FindOrCreateWindow<ImageWindow>(windowNameCopy.c_str());
-            imWindow->UpdateImage(image);
-        });
-    }
+    std::string windowNameCopy = windowName;
+    RunOnceInImGuiThread([windowNameCopy,image](){
+        ImageWindow* imWindow = FindOrCreateWindow<ImageWindow>(windowNameCopy.c_str());
+        imWindow->UpdateImage(image);
+    });
 }
 
 void AddPlotValue(const char* windowName,
@@ -70,10 +86,9 @@ void AddPlotValue(const char* windowName,
     
     // Need to create it, enqueue that in the list of tasks for the next frame;
     {
-        std::lock_guard<std::mutex> _ (g_Context->concurrentTasks.lock);
         std::string windowNameCopy = windowName;
         std::string groupNameCopy = groupName;
-        g_Context->concurrentTasks.tasksForNextFrame.emplace_back([windowNameCopy,groupNameCopy,xValue,yValue](){
+        RunOnceInImGuiThread([windowNameCopy,groupNameCopy,xValue,yValue](){
             PlotWindow* plotWindow = FindOrCreateWindow<PlotWindow>(windowNameCopy.c_str());
             plotWindow->AddPlotValue(groupNameCopy.c_str(), yValue, xValue);
         });
@@ -98,10 +113,7 @@ void Render()
     
     g_Context->cache.tasksToRun.clear();
     
-    for (auto& window : g_Context->windows)
-    {
-        window->Render();
-    }
+    g_Context->windowListManager.Render();
 }
 
 } // Logger
