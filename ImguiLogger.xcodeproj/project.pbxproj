@@ -64,6 +64,7 @@
 		2D809A5A247A3D68007845B6 /* imgui_logger_view_osx.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = imgui_logger_view_osx.mm; sourceTree = "<group>"; };
 		2D809A5B247A3D68007845B6 /* imgui_logger_view.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = imgui_logger_view.h; sourceTree = "<group>"; };
 		2D809A5D247A3F8F007845B6 /* imgui_logger_impl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = imgui_logger_impl.h; sourceTree = "<group>"; };
+		2DB25AD32483B6FC0029FF8F /* TODO.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TODO.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -82,6 +83,7 @@
 		2D80988D2479A68E007845B6 = {
 			isa = PBXGroup;
 			children = (
+				2DB25AD32483B6FC0029FF8F /* TODO.md */,
 				2D809A462479B0CD007845B6 /* implot */,
 				2D809A2A2479AEA7007845B6 /* imgui */,
 				2D8098992479A68E007845B6 /* main.mm */,
