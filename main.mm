@@ -106,7 +106,7 @@ void workerThread1()
 void workerThread2()
 {
     int offset = 0; // could use atomic, but we don't care for quick&dirty tests.
-    ImGui::Logger::SetWindowRenderExtraCallback("SmallImage", "ModifyOffset", [&offset]() {
+    ImGui::Logger::SetWindowPreRenderCallback("SmallImage", "ModifyOffset", [&offset]() {
         ImGui::SliderInt("Adjust offset", &offset, 0, 320);
     });
     
@@ -134,7 +134,7 @@ void workerThread2()
         std::this_thread::sleep_for(std::chrono::milliseconds(40));
     }
     
-    ImGui::Logger::SetWindowRenderExtraCallback("SmallImage", "ModifyOffset", nullptr);
+    ImGui::Logger::SetWindowPreRenderCallback("SmallImage", "ModifyOffset", nullptr);
 }
 
 -(void)applicationDidFinishLaunching:(NSNotification *)aNotification

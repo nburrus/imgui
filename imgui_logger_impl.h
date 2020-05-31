@@ -29,29 +29,29 @@ namespace ImGui
 namespace Logger
 {
 
-class Window
+class Window;
+
+struct WindowData
 {
-public:
-    Window (const char* c_name)
-    : name (c_name), id(ImHashStr(c_name))
-    {}
+    static const char* defaultCategoryName() { return "Unsorted"; }
     
-    virtual ~Window ()
-    {}
-    
-    virtual void Render() = 0;
-    
-public:
-    ImGuiID id;
     std::string name;
+    ImGuiID id = 0; // == ImHashStr(name)
+    
+    std::string category = defaultCategoryName();
+    ImVec2 preferredSize = ImVec2(320,240);
+    std::string helpString = "No help specified";
+    bool isVisible = true;
+    
+    // Can be nullptr if no window was yet created, but properties were specified.
+    Window* window = nullptr;
+    
+    std::map<std::string, std::function<void(void)>> preRenderCallbacks;
 };
 
 class ImageWindow : public Window
 {
 public:
-    ImageWindow (const char* name) : Window (name)
-    {}
-    
     void UpdateImage (const ImagePtr& newImage)
     {
         std::lock_guard<std::mutex> _ (concurrent.imageLock);
@@ -90,7 +90,7 @@ public:
             _imageDataUploadedToTexture = imageToShow->data.data();
         }
         
-        if (ImGui::Begin(name.c_str()))
+        if (ImGui::Begin(imGuiData->name.c_str()))
         {
             float aspectRatio = float(imageToShow->height) / imageToShow->width;
             ImVec2 wSize = ImGui::GetWindowSize();
@@ -126,9 +126,6 @@ private:
 class PlotWindow : public Window
 {
 public:
-    PlotWindow (const char* name) : Window (name)
-    {}
-    
     void AddPlotValue(const char* groupName,
                       float yValue,
                       float xValue)
@@ -182,7 +179,7 @@ public:
         if (_groupData.empty())
             return;
                 
-        if (ImGui::Begin(name.c_str()))
+        if (ImGui::Begin(imGuiData->name.c_str()))
         {
             ImPlot::SetNextPlotLimits(_dataBounds.xMin, _dataBounds.xMax, _dataBounds.yMin, _dataBounds.yMax, ImGuiCond_Always);
             if (ImPlot::BeginPlot("Line Plot", "x", "f(x)"))
@@ -234,69 +231,70 @@ private:
     } _dataBounds; // across all groups.
 };
 
-struct WindowProperties
-{
-    static const char* defaultCategoryName() { return "Unsorted"; }
-    
-    std::string name;
-    std::string category = defaultCategoryName();
-    ImGuiID id = 0;
-    ImVec2 preferredSize = ImVec2(320,240);
-    std::string helpString = "No help specified";
-    bool isVisible = true;
-    Window* window = nullptr;
-    
-    std::map<std::string, std::function<void(void)>> extraRenderCallbacks;
-};
-
 struct WindowCategory
 {
     std::string name;
-    std::vector<WindowProperties> windowProperties;
+    std::vector<WindowData*> windows;
 };
 
-class WindowListManager
+class WindowManager
 {
 public:
-    WindowProperties& AddWindow (Window* window, const std::string& categoryName)
+    WindowData& AddWindow (const char* windowName, std::unique_ptr<Window> windowPtr)
     {
-        auto& props = SetWindowCategory(window->name, categoryName);
-        props.window = window;
-        return props;
+        Window* window = windowPtr.get();
+        _windows.emplace_back(std::move(windowPtr));
+        auto& data = FindOrCreateDataForWindow(windowName);
+        data.window = window;
+        window->imGuiData = &data;
+        {
+            std::lock_guard<std::mutex> _(concurrent.lock);
+            concurrent.windowsByID.SetVoidPtr(data.id, window);
+        }
+        return data;
     }
     
     // Could take a single set with a Json to know which properties to update.
-    WindowProperties& SetWindowCategory (const std::string& windowName, const std::string& category)
+    WindowData& SetWindowCategory (const char* windowName, const char* newCategory)
     {
-        auto& props = FindOrCreatePropertiesForWindow(windowName, category);
-        if (props.category == category)
-            return props;
+        auto& data = FindOrCreateDataForWindow(windowName);
+        if (data.category == newCategory)
+            return data;
         
-        return ChangeWindowCategory(props, category);
+        auto& oldCat = findOrCreateCategory(data.category.c_str());
+        
+        auto oldCatIt = std::find_if(oldCat.windows.begin(), oldCat.windows.end(), [&](WindowData* p) {
+            return &data == p;
+        });
+        oldCat.windows.erase(oldCatIt);
+        
+        data.category = newCategory;
+        auto& newCat = findOrCreateCategory(newCategory);
+        newCat.windows.push_back (&data);
+        return data;
     }
     
-    WindowProperties& SetWindowPreferredSize (const std::string& windowName, const ImVec2& preferredSize)
+    WindowData& SetWindowPreferredSize (const char* windowName, const ImVec2& preferredSize)
     {
-        auto& props = FindOrCreatePropertiesForWindow(windowName, WindowProperties::defaultCategoryName());
-        props.preferredSize = preferredSize;
-        return props;
+        auto& data = FindOrCreateDataForWindow(windowName);
+        data.preferredSize = preferredSize;
+        return data;
     }
     
-    WindowProperties& SetWindowHelpString (const std::string& windowName, const std::string& helpString)
+    WindowData& SetWindowHelpString (const char* windowName, const std::string& helpString)
     {
-        auto& props = FindOrCreatePropertiesForWindow(windowName, WindowProperties::defaultCategoryName());
-        props.helpString = helpString;
-        return props;
+        auto& data = FindOrCreateDataForWindow(windowName);
+        data.helpString = helpString;
+        return data;
     }
     
-    WindowProperties& FindOrCreatePropertiesForWindow (const std::string& windowName,
-                                                       const std::string& categoryNameIfNeedToCreateIt)
+    WindowData& FindOrCreateDataForWindow (const char* windowName)
     {
-        ImGuiID windowID = ImHashStr(windowName.c_str());
-        WindowProperties* props = findPropertiesForWindow(windowID);
-        if (props != nullptr)
-            return *props;
-        return createDefaultPropertiesForWindow(windowName, categoryNameIfNeedToCreateIt);
+        ImGuiID windowID = ImHashStr(windowName);
+        WindowData* data = findDataForWindow(windowID);
+        if (data != nullptr)
+            return *data;
+        return createDataForWindow(windowName, WindowData::defaultCategoryName());
     }
     
     void Render()
@@ -309,15 +307,20 @@ public:
             if (ImGui::Button("Hide All"))
             {
                 for (auto& cat : _windowsPerCategory)
-                    for (auto& props : cat.windowProperties)
-                        props.isVisible = false;
+                    for (auto& winData : cat.windows)
+                        winData->isVisible = false;
             }
             ImGui::SameLine();
             if (ImGui::Button("Show All"))
             {
                 for (auto& cat : _windowsPerCategory)
-                for (auto& props : cat.windowProperties)
-                    props.isVisible = true;
+                for (auto& winData : cat.windows)
+                    winData->isVisible = true;
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Tile Windows"))
+            {
+                // FIXME: implement.
             }
             
             for (auto& cat : _windowsPerCategory)
@@ -336,18 +339,18 @@ public:
                 if (!showCat)
                     continue;
                 
-                for (auto& props : cat.windowProperties)
+                for (auto& winData : cat.windows)
                 {
-                    const bool disabled = (props.window == nullptr);
+                    const bool disabled = (winData->window == nullptr);
                     if (disabled)
                     {
                         ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
                         ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
                     }
                     
-                    ImGui::Checkbox(props.name.c_str(), &props.isVisible);
+                    ImGui::Checkbox(winData->name.c_str(), &winData->isVisible);
                     ImGui::SameLine();
-                    helpMarker(props.helpString.c_str());
+                    helpMarker(winData->helpString.c_str());
                     
                     if (disabled)
                     {
@@ -361,25 +364,45 @@ public:
         
         for (auto& cat : _windowsPerCategory)
         {
-            for (auto& props : cat.windowProperties)
+            for (auto& winData : cat.windows)
             {
-                if (props.window && props.isVisible)
+                if (winData->window && winData->isVisible)
                 {
-                    if (!props.extraRenderCallbacks.empty())
+                    if (!winData->preRenderCallbacks.empty())
                     {
-                        if (ImGui::Begin(props.name.c_str()))
+                        if (ImGui::Begin(winData->name.c_str()))
                         {
-                            for (const auto& it : props.extraRenderCallbacks)
+                            for (const auto& it : winData->preRenderCallbacks)
                                 it.second();
                         }
                         ImGui::End();
                     }
 
-                    props.window->Render();
+                    winData->window->Render();
                 }
             }
         }
     }
+    
+    Window* ConcurrentFindWindowById(ImGuiID id)
+    {
+        void* window = concurrent.windowsByID.GetVoidPtr(id);
+        return reinterpret_cast<Window*>(window);
+    }
+
+    Window* ConcurrentFindWindow (const char* name)
+    {
+        ImGuiID id = ImHashStr(name);
+        Window* window = ConcurrentFindWindowById(id);
+        
+        if (window == nullptr)
+            return nullptr;
+        
+        // Non-unique hash? Should be extremely rare! Rename your window if that somehow happens.
+        IM_ASSERT (window->imGuiData->name == name);
+        return window;
+    }
+
     
 private:
     void helpMarker(const char* desc)
@@ -395,18 +418,20 @@ private:
         }
     }
     
-    WindowProperties& createDefaultPropertiesForWindow (const std::string& windowName, const std::string& categoryName)
+    WindowData& createDataForWindow (const char* windowName, const char* categoryName)
     {
+        _windowsData.emplace_back(std::make_unique<WindowData>());
+        auto* winData = _windowsData.back().get();
+        winData->name = windowName;
+        winData->id = ImHashStr(windowName);
+        winData->category = categoryName;
+        
         auto& cat = findOrCreateCategory(categoryName);
-        cat.windowProperties.emplace_back();
-        auto& properties = cat.windowProperties.back();
-        properties.name = windowName;
-        properties.id = ImHashStr(windowName.c_str());
-        properties.category = categoryName;
-        return properties;
+        cat.windows.emplace_back(winData);
+        return *winData;
     }
     
-    WindowCategory& findOrCreateCategory(const std::string& categoryName)
+    WindowCategory& findOrCreateCategory(const char* categoryName)
     {
         for (auto& cat : _windowsPerCategory)
             if (cat.name == categoryName)
@@ -416,46 +441,31 @@ private:
         return _windowsPerCategory.back();
     }
     
-    WindowProperties* findPropertiesForWindow (const ImGuiID& windowID)
+    WindowData* findDataForWindow (const ImGuiID& windowID)
     {
-        for (auto& cat : _windowsPerCategory)
-            for (auto& prop : cat.windowProperties)
-                if (prop.id == windowID)
-                    return &prop;
+        for (auto& data : _windowsData)
+            if (data->id == windowID)
+                return data.get();
         return nullptr;
-    }
-        
-    WindowProperties& ChangeWindowCategory(WindowProperties& properties, const std::string& newCategoryName)
-    {
-        auto& oldCat = findOrCreateCategory(properties.category);
-        
-        auto oldCatIt = std::find_if(oldCat.windowProperties.end(), oldCat.windowProperties.end(), [&](WindowProperties& p) {
-            return &properties == &p;
-        });
-        
-        auto newProperties = properties;
-        newProperties.category = newCategoryName;
-        oldCat.windowProperties.erase(oldCatIt);
-        
-        auto& newCat = findOrCreateCategory(newCategoryName);
-        newCat.windowProperties.push_back (newProperties);
-        return newCat.windowProperties.back();
     }
     
 private:
-    std::vector<WindowCategory> _windowsPerCategory;
-};
-
-struct Context
-{
     // Might get accessed as read-only by other threads.
     // If you want to modify it, you need to grab a lock.
     struct
     {
         std::mutex lock;
         ImGuiStorage windowsByID;
-    } concurrentWindows;
-        
+    } concurrent;
+    
+private:
+    std::vector<std::unique_ptr<Window>> _windows;
+    std::vector<std::unique_ptr<WindowData>> _windowsData;
+    std::vector<WindowCategory> _windowsPerCategory;
+};
+
+struct Context
+{
     struct
     {
         std::mutex lock;
@@ -468,8 +478,7 @@ struct Context
         std::vector<std::function<void(void)>> tasksToRun;
     } cache;
     
-    std::vector<std::unique_ptr<Window>> windows;
-    WindowListManager windowListManager;
+    WindowManager windowManager;
 };
 
 extern Context* g_Context;
@@ -480,47 +489,20 @@ void RunOnceInImGuiThread(const std::function<void(void)>& f)
     g_Context->concurrentTasks.tasksForNextFrame.emplace_back(f);
 }
 
-inline Window* FindWindowById(ImGuiID id)
-{
-    void* window = g_Context->concurrentWindows.windowsByID.GetVoidPtr(id);
-    return reinterpret_cast<Window*>(window);
-}
-
-template <class WindowType>
-WindowType* FindWindow (const char* name)
-{
-    ImGuiID id = ImHashStr(name);
-    Window* window = FindWindowById(id);
-    
-    if (window == nullptr)
-        return nullptr;
-    
-    // Non-unique hash? Should be extremely rare! Rename your window if that somehow happens.
-    IM_ASSERT (window->name == name);
-    WindowType* imWindow = dynamic_cast<WindowType*>(window);
-    IM_ASSERT (imWindow != nullptr);
-    return imWindow;
-}
-
 // Only from the ImGui thread.
 template <class WindowType>
 WindowType* FindOrCreateWindow (const char* name)
 {
-    WindowType* concreteWindow = FindWindow<WindowType>(name);
-    if (concreteWindow)
-        return concreteWindow;
-    
-    ImGuiID id = ImHashStr(name);
-    concreteWindow = new WindowType(name);
-    Window* window = concreteWindow;
-    g_Context->windows.emplace_back(std::unique_ptr<Window>(window));
-    g_Context->windowListManager.AddWindow(window, WindowProperties::defaultCategoryName());
-    
+    Window* window = g_Context->windowManager.ConcurrentFindWindow(name);
+    if (window)
     {
-        std::lock_guard<std::mutex> _(g_Context->concurrentWindows.lock);
-        g_Context->concurrentWindows.windowsByID.SetVoidPtr(id, window);
+        WindowType* concreteWindow = dynamic_cast<WindowType*>(window);
+        IM_ASSERT (concreteWindow != nullptr);
+        return concreteWindow;
     }
     
+    auto* concreteWindow = new WindowType();
+    g_Context->windowManager.AddWindow(name, std::unique_ptr<Window>(concreteWindow));
     return concreteWindow;
 }
 

@@ -31,21 +31,21 @@ void SetPerFrameCallback(const char* callbackName,
     }
 }
 
-void SetWindowRenderExtraCallback(const char* windowName,
-                                  const char* callbackName,
-                                  const std::function<void(void)>& callback)
+void SetWindowPreRenderCallback(const char* windowName,
+                                const char* callbackName,
+                                const std::function<void(void)>& callback)
 {
     std::string windowNameCopy = windowName;
     std::string callbackNameCopy = callbackName;
     RunOnceInImGuiThread([windowNameCopy,callbackNameCopy,callback]() {
-        auto& props = g_Context->windowListManager.FindOrCreatePropertiesForWindow(windowNameCopy, WindowProperties::defaultCategoryName());
+        auto& winData = g_Context->windowManager.FindOrCreateDataForWindow(windowNameCopy.c_str());
         if (callback)
         {
-            props.extraRenderCallbacks[callbackNameCopy] = callback;
+            winData.preRenderCallbacks[callbackNameCopy] = callback;
         }
         else
         {
-            props.extraRenderCallbacks.erase(callbackNameCopy);
+            winData.preRenderCallbacks.erase(callbackNameCopy);
         }
     });
 }
@@ -95,6 +95,14 @@ void AddPlotValue(const char* windowName,
     }
 }
 
+Window* FindWindow(const char* windowName)
+{
+    return g_Context->windowManager.ConcurrentFindWindow(windowName);
+}
+
+namespace GuiThread
+{
+
 void Render()
 {
     {
@@ -113,8 +121,15 @@ void Render()
     
     g_Context->cache.tasksToRun.clear();
     
-    g_Context->windowListManager.Render();
+    g_Context->windowManager.Render();
 }
+
+void AddWindow(const char* windowName, std::unique_ptr<Window> window)
+{
+    g_Context->windowManager.AddWindow (windowName, std::move(window));
+}
+
+} // GuiThread
 
 } // Logger
 } // ImGui
