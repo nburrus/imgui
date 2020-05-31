@@ -322,7 +322,20 @@ public:
             
             for (auto& cat : _windowsPerCategory)
             {
-                ImGui::BulletText("%s", cat.name.c_str());
+                const bool showCat = ImGui::CollapsingHeader(cat.name.c_str(), ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_DefaultOpen);
+                
+                // Messing around with a button to toggle all the windows in the category.
+                //                ImGui::SameLine(GetWindowContentRegionMax().x - 30);
+                //
+                //                if (ImGui::Button("All"))
+                //                {
+                //                    for (auto& props : cat.windowProperties)
+                //                        props.isVisible = true;
+                //                }
+                
+                if (!showCat)
+                    continue;
+                
                 for (auto& props : cat.windowProperties)
                 {
                     const bool disabled = (props.window == nullptr);
@@ -331,7 +344,11 @@ public:
                         ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
                         ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
                     }
+                    
                     ImGui::Checkbox(props.name.c_str(), &props.isVisible);
+                    ImGui::SameLine();
+                    helpMarker(props.helpString.c_str());
+                    
                     if (disabled)
                     {
                         ImGui::PopItemFlag();
@@ -365,6 +382,19 @@ public:
     }
     
 private:
+    void helpMarker(const char* desc)
+    {
+        ImGui::TextDisabled("(?)");
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::BeginTooltip();
+            ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+            ImGui::TextUnformatted(desc);
+            ImGui::PopTextWrapPos();
+            ImGui::EndTooltip();
+        }
+    }
+    
     WindowProperties& createDefaultPropertiesForWindow (const std::string& windowName, const std::string& categoryName)
     {
         auto& cat = findOrCreateCategory(categoryName);
