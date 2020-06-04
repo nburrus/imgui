@@ -22,6 +22,8 @@
 
 #include <map>
 
+#include <set>
+
 #define GL_SILENCE_DEPRECATION 1
 
 namespace ImGui
@@ -248,6 +250,9 @@ struct WindowCategory
 class WindowManager
 {
 public:
+    static constexpr int windowListWidth = 200;
+    
+public:
     WindowData& AddWindow (const char* windowName, std::unique_ptr<Window> windowPtr)
     {
         Window* window = windowPtr.get();
@@ -305,10 +310,81 @@ public:
         return createDataForWindow(windowName, WindowData::defaultCategoryName());
     }
     
+    void TileAndScaleVisibleWindows()
+    {
+        auto& IO = ImGui::GetIO();
+        
+        auto isWindowHeightSmaller = [](const Window* w1, const Window* w2) {
+            if (w1->imGuiData->preferredSize.y < w2->imGuiData->preferredSize.y)
+                return true;
+            if (w1->imGuiData->preferredSize.y > w2->imGuiData->preferredSize.y)
+                return false;
+            if (w1->imGuiData->preferredSize.x < w2->imGuiData->preferredSize.x)
+                return true;
+            if (w1->imGuiData->preferredSize.x > w2->imGuiData->preferredSize.x)
+                return false;
+            return w1->imGuiData->name < w2->imGuiData->name;
+        };
+        
+        std::set<Window*, decltype(isWindowHeightSmaller)> windowsSortedBySize(isWindowHeightSmaller);
+        for (const auto& win : _windows)
+            windowsSortedBySize.insert (win.get());
+
+        const float startX = windowListWidth;
+        const float endX = IO.DisplaySize.x;
+        const float startY = 0;
+        const float endY = IO.DisplaySize.y;
+        
+        float scaleFactor = 1.0f;
+        bool didFit = false;
+        while (!didFit)
+        {
+            float currentX = startX;
+            float currentY = startY;
+            float maxHeightInCurrentRow = 0;
+            
+            // Start optimistic.
+            didFit = true;
+            
+            for (auto& win : windowsSortedBySize)
+            {
+                auto* winData = win->imGuiData;
+                if (!winData->isVisible)
+                    continue;
+                
+                ImVec2 scaledWinSize (winData->preferredSize.x*scaleFactor,
+                                      winData->preferredSize.y*scaleFactor);
+                
+                // Start new row?
+                if (currentX > startX && currentX + scaledWinSize.x > endX)
+                {
+                    currentX = startX;
+                    currentY += maxHeightInCurrentRow;
+                    maxHeightInCurrentRow = 0;
+                }
+                
+                // No more row? Start again from the top, but with an offset.
+                if (currentY + scaledWinSize.y > endY)
+                {
+                    didFit = false;
+                    // Retry with a smaller scale.
+                    scaleFactor *= 0.95;
+                    break;
+                }
+                
+                winData->layoutUpdateOnNextFrame.size = scaledWinSize;
+                winData->layoutUpdateOnNextFrame.pos = ImVec2(currentX, currentY);
+                winData->layoutUpdateOnNextFrame.hasData = true;
+                ImGui::SetWindowFocus(winData->name.c_str());
+                
+                currentX += scaledWinSize.x;
+                maxHeightInCurrentRow = std::max(maxHeightInCurrentRow, scaledWinSize.y);
+            }
+        }
+    }
+    
     void Render()
     {
-        const int windowListWidth = 200;
-        
         auto& IO = ImGui::GetIO();
         ImGui::SetNextWindowPos(ImVec2(0,0), ImGuiCond_Once);
         ImGui::SetNextWindowSize(ImVec2(windowListWidth, IO.DisplaySize.y), ImGuiCond_Once);
@@ -330,22 +406,7 @@ public:
             ImGui::SameLine();
             if (ImGui::Button("Tile Windows"))
             {
-                int nextCol = 0;
-                int nextRow = 0;
-                for (auto& winData : _windowsData)
-                {
-                    if (!winData->isVisible)
-                        continue;
-                    winData->layoutUpdateOnNextFrame.size = winData->preferredSize;
-                    winData->layoutUpdateOnNextFrame.pos = ImVec2(nextCol*320 + windowListWidth, nextRow*240);
-                    winData->layoutUpdateOnNextFrame.hasData = true;
-                    ++nextCol;
-                    if (nextCol == 4)
-                    {
-                        nextCol = 0;
-                        ++nextRow;
-                    }
-                }
+                TileAndScaleVisibleWindows();
             }
             
             for (auto& cat : _windowsPerCategory)
@@ -398,6 +459,9 @@ public:
                     ImGui::SetNextWindowCollapsed(false, ImGuiCond_Always);
                     winData->layoutUpdateOnNextFrame = {}; // reset it.
                 }
+                    
+                ImGui::Begin(winData->name.c_str(), &winData->isVisible);
+                ImGui::End();
                 
                 if (!winData->preRenderCallbacks.empty())
                 {
