@@ -54,6 +54,7 @@ struct WindowData
         bool hasData = false;
         ImVec2 pos = ImVec2(0,0);
         ImVec2 size = ImVec2(0,0);
+        ImGuiCond_ imGuiCond = ImGuiCond_Always;
     } layoutUpdateOnNextFrame;
         
     std::map<std::string, std::function<void(void)>> preRenderCallbacks;
@@ -260,10 +261,23 @@ public:
         auto& data = FindOrCreateDataForWindow(windowName);
         data.window = window;
         window->imGuiData = &data;
+        
+        auto& IO = ImGui::GetIO();
+        data.layoutUpdateOnNextFrame.size = data.preferredSize;
+        
+        const float availableWidth = std::max(0.f, (IO.DisplaySize.x - windowListWidth - data.preferredSize.x));
+        const float availableHeight = std::max(0.f, (IO.DisplaySize.y - data.preferredSize.y));
+        
+        data.layoutUpdateOnNextFrame.pos.x = windowListWidth + (float(rand()) / float(RAND_MAX)) * availableWidth;
+        data.layoutUpdateOnNextFrame.pos.y = (float(rand()) / float(RAND_MAX)) * availableHeight;
+        data.layoutUpdateOnNextFrame.imGuiCond = ImGuiCond_FirstUseEver;
+        data.layoutUpdateOnNextFrame.hasData = true;
+        
         {
             std::lock_guard<std::mutex> _(concurrent.lock);
             concurrent.windowsByID.SetVoidPtr(data.id, window);
         }
+        
         return data;
     }
     
@@ -374,6 +388,7 @@ public:
                 
                 winData->layoutUpdateOnNextFrame.size = scaledWinSize;
                 winData->layoutUpdateOnNextFrame.pos = ImVec2(currentX, currentY);
+                winData->layoutUpdateOnNextFrame.imGuiCond = ImGuiCond_Always;
                 winData->layoutUpdateOnNextFrame.hasData = true;
                 ImGui::SetWindowFocus(winData->name.c_str());
                 
@@ -456,8 +471,9 @@ public:
                 {
                     ImGui::SetNextWindowPos(winData->layoutUpdateOnNextFrame.pos, ImGuiCond_Always);
                     ImGui::SetNextWindowSize(winData->layoutUpdateOnNextFrame.size, ImGuiCond_Always);
-                    ImGui::SetNextWindowCollapsed(false, ImGuiCond_Always);
+                    ImGui::SetNextWindowCollapsed(false, winData->layoutUpdateOnNextFrame.imGuiCond);
                     winData->layoutUpdateOnNextFrame = {}; // reset it.
+                    ImGui::MarkIniSettingsDirty();
                 }
                     
                 ImGui::Begin(winData->name.c_str(), &winData->isVisible);
