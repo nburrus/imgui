@@ -73,6 +73,8 @@
 
 void workerThread1()
 {
+    ImGui::Logger::SetWindowProperties("VGAImage", "Images", "Image that is VGA", 640, 480);
+    
     int i = 0;
     while (true)
     {
@@ -105,8 +107,10 @@ void workerThread1()
 
 void workerThread2()
 {
+    ImGui::Logger::SetWindowProperties("SmallImage with a very long name that won't fit", "Images", "Image that is small with an offset");
+    
     int offset = 0; // could use atomic, but we don't care for quick&dirty tests.
-    ImGui::Logger::SetWindowPreRenderCallback("SmallImage", "ModifyOffset", [&offset]() {
+    ImGui::Logger::SetWindowPreRenderCallback("SmallImage with a very long name that won't fit", "ModifyOffset", [&offset]() {
         ImGui::SliderInt("Adjust offset", &offset, 0, 320);
     });
     
@@ -125,7 +129,7 @@ void workerThread2()
             imagePtr->data[idx] = (c+r+offset)%255;
         }
         
-        ImGui::Logger::UpdateImage("SmallImage", imagePtr);
+        ImGui::Logger::UpdateImage("SmallImage with a very long name that won't fit", imagePtr);
         
         ImGui::Logger::AddPlotValue("Plot1", "Live", log(i*i + 1), i);
         ImGui::Logger::AddPlotValue("Plot1", "GT", log(i*i + 1) + 1, i);
@@ -134,7 +138,7 @@ void workerThread2()
         std::this_thread::sleep_for(std::chrono::milliseconds(40));
     }
     
-    ImGui::Logger::SetWindowPreRenderCallback("SmallImage", "ModifyOffset", nullptr);
+    ImGui::Logger::SetWindowPreRenderCallback("SmallImage with a very long name that won't fit", "ModifyOffset", nullptr);
 }
 
 -(void)applicationDidFinishLaunching:(NSNotification *)aNotification

@@ -35,7 +35,7 @@ class Window;
 
 struct WindowData
 {
-    static const char* defaultCategoryName() { return "Unsorted"; }
+    static const char* defaultCategoryName() { return "Default"; }
 
     std::string name;
     ImGuiID id = 0; // == ImHashStr(name)
@@ -401,9 +401,9 @@ public:
     void Render()
     {
         auto& IO = ImGui::GetIO();
-        ImGui::SetNextWindowPos(ImVec2(0,0), ImGuiCond_Once);
-        ImGui::SetNextWindowSize(ImVec2(windowListWidth, IO.DisplaySize.y), ImGuiCond_Once);
-        if (ImGui::Begin("Window List"))
+        ImGui::SetNextWindowPos(ImVec2(0,0), ImGuiCond_Always);
+        ImGui::SetNextWindowSize(ImVec2(windowListWidth, IO.DisplaySize.y), ImGuiCond_Always);
+        if (ImGui::Begin("Window List", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove))
         {
             if (ImGui::Button("Hide All"))
             {
@@ -450,8 +450,15 @@ public:
                     }
                     
                     ImGui::Checkbox(winData->name.c_str(), &winData->isVisible);
-                    ImGui::SameLine();
-                    helpMarker(winData->helpString.c_str());
+                    if (ImGui::IsItemHovered())
+                    {
+                        ImGui::BeginTooltip();
+                        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+                        ImGui::TextUnformatted(winData->name.c_str());
+                        ImGui::TextUnformatted(winData->helpString.c_str());
+                        ImGui::PopTextWrapPos();
+                        ImGui::EndTooltip();
+                    }
                     
                     if (disabled)
                     {
