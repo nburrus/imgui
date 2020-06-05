@@ -56,6 +56,12 @@ void SetWindowPreRenderCallback(const char* windowName,
                                 const char* callbackName,
                                 const std::function<void(void)>& callback);
 
+void SetWindowProperties(const char* windowName,
+                         const char* categoryName, /* = nullptr for no change */
+                         const char* helpString, /* = nullptr for no change */
+                         int preferredWidth = -1, /* -1 for no change */
+                         int preferredHeight = -1 /* -1 for no change */);
+
 // Image
 
 struct Image

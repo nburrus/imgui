@@ -31,6 +31,33 @@ void SetPerFrameCallback(const char* callbackName,
     }
 }
 
+void SetWindowProperties(const char* windowName,
+                         const char* categoryName, /* = nullptr for no change */
+                         const char* helpString, /* = nullptr for no change */
+                         int preferredWidth, /* -1 for no change */
+                         int preferredHeight /* -1 for no change */)
+{
+    std::string windowNameCopy = windowName ? windowName : "";
+    std::string categoryNameCopy = categoryName ? categoryName : "";
+    std::string helpStringCopy = helpString ? helpString : "";
+    
+    RunOnceInImGuiThread([=]() {
+        auto& winData = g_Context->windowManager.FindOrCreateDataForWindow(windowNameCopy.c_str());
+
+        if (!categoryNameCopy.empty())
+            g_Context->windowManager.SetWindowCategory(windowNameCopy.c_str(), categoryNameCopy.c_str());
+
+        if (!helpStringCopy.empty())
+            winData.helpString = helpStringCopy;
+        
+        if (preferredWidth > 0)
+            winData.preferredSize.x = preferredWidth;
+        
+        if (preferredHeight > 0)
+            winData.preferredSize.y = preferredHeight;
+    });
+}
+
 void SetWindowPreRenderCallback(const char* windowName,
                                 const char* callbackName,
                                 const std::function<void(void)>& callback)
