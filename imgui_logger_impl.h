@@ -33,13 +33,27 @@ namespace Logger
 
 class Window;
 
-struct WindowData
+class WindowData
 {
+public:
     static const char* defaultCategoryName() { return "Default"; }
-
-    std::string name;
-    ImGuiID id = 0; // == ImHashStr(name)
     
+public:
+    WindowData(const char* windowName)
+    {
+        _name = windowName;
+        _id = ImHashStr(windowName);
+    }
+    
+    const std::string& name () const { return _name; }
+    ImGuiID id () const { return _id; }
+        
+    // Here we hackily rely on a special window settings to avoid having to write
+    // our own settings handler and have persistent data.
+    bool isVisible() const { return _isVisible; };
+    bool& isVisibleRef() { return _isVisible; };
+
+public:
     // Can be nullptr if no window was yet created, but properties were specified.
     Window* window = nullptr;
     
@@ -47,8 +61,7 @@ struct WindowData
     
     ImVec2 preferredSize = ImVec2(320,240);
     std::string helpString = "No help specified";
-    bool isVisible = true;
-    
+        
     struct
     {
         bool hasData = false;
@@ -58,6 +71,12 @@ struct WindowData
     } layoutUpdateOnNextFrame;
         
     std::map<std::string, std::function<void(void)>> preRenderCallbacks;
+    
+private:
+    // Keeping everything to have good performance in Debug too.
+    std::string _name;
+    ImGuiID _id = 0; // == ImHashStr(name)
+    bool _isVisible = true;
 };
 
 class ImageWindow : public Window
@@ -101,20 +120,10 @@ public:
             _imageDataUploadedToTexture = imageToShow->data.data();
         }
         
-        if (ImGui::Begin(imGuiData->name.c_str()))
+        if (ImGui::Begin(imGuiData->name().c_str()))
         {
             float aspectRatio = float(imageToShow->height) / imageToShow->width;
             ImVec2 wSize = ImGui::GetWindowSize();
-            
-            ImGui::TextDisabled("(?)");
-            if (ImGui::IsItemHovered())
-            {
-                ImGui::BeginTooltip();
-                ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-                ImGui::TextUnformatted("Show a window scrolling");
-                ImGui::PopTextWrapPos();
-                ImGui::EndTooltip();
-            }
             
             ImGui::BulletText("ImageWindow content");
             ImGui::BulletText("Width: %d", imageToShow->width);
@@ -190,7 +199,7 @@ public:
         if (_groupData.empty())
             return;
                 
-        if (ImGui::Begin(imGuiData->name.c_str()))
+        if (ImGui::Begin(imGuiData->name().c_str()))
         {
             ImPlot::SetNextPlotLimits(_dataBounds.xMin, _dataBounds.xMax, _dataBounds.yMin, _dataBounds.yMax, ImGuiCond_Always);
             if (ImPlot::BeginPlot("Line Plot", "x", "f(x)"))
@@ -254,6 +263,8 @@ public:
     static constexpr int windowListWidth = 200;
     
 public:
+    const std::vector<std::unique_ptr<WindowData>>& windowsData() const { return _windowsData; };
+    
     WindowData& AddWindow (const char* windowName, std::unique_ptr<Window> windowPtr)
     {
         Window* window = windowPtr.get();
@@ -275,7 +286,7 @@ public:
         
         {
             std::lock_guard<std::mutex> _(concurrent.lock);
-            concurrent.windowsByID.SetVoidPtr(data.id, window);
+            concurrent.windowsByID.SetVoidPtr(data.id(), window);
         }
         
         return data;
@@ -337,7 +348,7 @@ public:
                 return true;
             if (w1->imGuiData->preferredSize.x > w2->imGuiData->preferredSize.x)
                 return false;
-            return w1->imGuiData->name < w2->imGuiData->name;
+            return w1->imGuiData->name() < w2->imGuiData->name();
         };
         
         std::set<Window*, decltype(isWindowHeightSmaller)> windowsSortedBySize(isWindowHeightSmaller);
@@ -363,7 +374,7 @@ public:
             for (auto& win : windowsSortedBySize)
             {
                 auto* winData = win->imGuiData;
-                if (!winData->isVisible)
+                if (!winData->isVisible())
                     continue;
                 
                 ImVec2 scaledWinSize (winData->preferredSize.x*scaleFactor,
@@ -390,7 +401,7 @@ public:
                 winData->layoutUpdateOnNextFrame.pos = ImVec2(currentX, currentY);
                 winData->layoutUpdateOnNextFrame.imGuiCond = ImGuiCond_Always;
                 winData->layoutUpdateOnNextFrame.hasData = true;
-                ImGui::SetWindowFocus(winData->name.c_str());
+                ImGui::SetWindowFocus(winData->name().c_str());
                 
                 currentX += scaledWinSize.x;
                 maxHeightInCurrentRow = std::max(maxHeightInCurrentRow, scaledWinSize.y);
@@ -405,38 +416,72 @@ public:
         ImGui::SetNextWindowSize(ImVec2(windowListWidth, IO.DisplaySize.y), ImGuiCond_Always);
         if (ImGui::Begin("Window List", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove))
         {
-            if (ImGui::Button("Hide All"))
+            bool allHidden = true;
+            for (const auto& win : _windows)
             {
-                for (auto& cat : _windowsPerCategory)
-                    for (auto& winData : cat.windows)
-                        winData->isVisible = false;
+                if (win->imGuiData->isVisible())
+                {
+                    allHidden = false;
+                    break;
+                }
             }
-            ImGui::SameLine();
-            if (ImGui::Button("Show All"))
+            
+            if (allHidden)
             {
-                for (auto& cat : _windowsPerCategory)
-                for (auto& winData : cat.windows)
-                    winData->isVisible = true;
+                if (ImGui::Button("Show All"))
+                {
+                    for (const auto& win : _windows)
+                        win->imGuiData->isVisibleRef() = true;
+                }
             }
+            else
+            {
+                if (ImGui::Button("Hide All"))
+                {
+                    for (const auto& win : _windows)
+                        win->imGuiData->isVisibleRef() = false;
+                }
+            }
+
             ImGui::SameLine();
-            if (ImGui::Button("Tile Windows"))
+            if (ImGui::Button("Auto-Tile"))
             {
                 TileAndScaleVisibleWindows();
             }
             
             for (auto& cat : _windowsPerCategory)
             {
-                const bool showCat = ImGui::CollapsingHeader(cat.name.c_str(), ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_DefaultOpen);
-                
-                // Messing around with a button to toggle all the windows in the category.
-                //                ImGui::SameLine(GetWindowContentRegionMax().x - 30);
-                //
-                //                if (ImGui::Button("All"))
-                //                {
-                //                    for (auto& props : cat.windowProperties)
-                //                        props.isVisible = true;
-                //                }
-                
+                // 3-state checkbox for all the windows in the category.
+                bool showCat = false;
+                {
+                    const int checkboxWidth = ImGui::GetFrameHeight() - ImGui::GetStyle().FramePadding.x;
+                    
+                    showCat = ImGui::CollapsingHeader(cat.name.c_str(), ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_DefaultOpen);
+                    
+                    ImGui::SameLine(GetContentRegionMax().x - checkboxWidth);
+                    
+                    int numVisible = 0;
+                    for (auto& winData : cat.windows)
+                        numVisible += winData->isVisible();
+                    
+                    bool mixedState = (numVisible > 0 && numVisible != cat.windows.size());
+                    
+                    if (mixedState)
+                    {
+                        ImGui::PushItemFlag(ImGuiItemFlags_MixedValue, true);
+                    }
+                    
+                    bool selected = (numVisible == cat.windows.size());
+                    if (ImGui::Checkbox(("##" + cat.name).c_str(), &selected))
+                    {
+                        for (auto& winData : cat.windows)
+                            winData->isVisibleRef() = selected;
+                    }
+                    
+                    if (mixedState)
+                        ImGui::PopItemFlag();
+                }
+                                
                 if (!showCat)
                     continue;
                 
@@ -449,12 +494,17 @@ public:
                         ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
                     }
                     
-                    ImGui::Checkbox(winData->name.c_str(), &winData->isVisible);
+                    if (ImGui::Checkbox(winData->name().c_str(), &winData->isVisibleRef()))
+                    {
+                        // Make sure we save the new visible state.
+                        ImGui::MarkIniSettingsDirty();
+                    }
+                    
                     if (ImGui::IsItemHovered())
                     {
                         ImGui::BeginTooltip();
                         ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-                        ImGui::TextUnformatted(winData->name.c_str());
+                        ImGui::TextUnformatted(winData->name().c_str());
                         ImGui::TextUnformatted(winData->helpString.c_str());
                         ImGui::PopTextWrapPos();
                         ImGui::EndTooltip();
@@ -472,23 +522,31 @@ public:
         
         for (auto& winData : _windowsData)
         {
-            if (winData->window && winData->isVisible)
+            if (winData->window && winData->isVisible())
             {
                 if (winData->layoutUpdateOnNextFrame.hasData)
                 {
-                    ImGui::SetNextWindowPos(winData->layoutUpdateOnNextFrame.pos, ImGuiCond_Always);
-                    ImGui::SetNextWindowSize(winData->layoutUpdateOnNextFrame.size, ImGuiCond_Always);
+                    ImGui::SetNextWindowPos(winData->layoutUpdateOnNextFrame.pos, winData->layoutUpdateOnNextFrame.imGuiCond);
+                    ImGui::SetNextWindowSize(winData->layoutUpdateOnNextFrame.size, winData->layoutUpdateOnNextFrame.imGuiCond);
                     ImGui::SetNextWindowCollapsed(false, winData->layoutUpdateOnNextFrame.imGuiCond);
                     winData->layoutUpdateOnNextFrame = {}; // reset it.
                     ImGui::MarkIniSettingsDirty();
                 }
                     
-                ImGui::Begin(winData->name.c_str(), &winData->isVisible);
+                ImGui::Begin(winData->name().c_str(), &winData->isVisibleRef());
+                if (ImGui::IsItemHovered())
+                {
+                    ImGui::BeginTooltip();
+                    ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+                    ImGui::TextUnformatted(winData->helpString.c_str());
+                    ImGui::PopTextWrapPos();
+                    ImGui::EndTooltip();
+                }
                 ImGui::End();
                 
                 if (!winData->preRenderCallbacks.empty())
                 {
-                    if (ImGui::Begin(winData->name.c_str()))
+                    if (ImGui::Begin(winData->name().c_str()))
                     {
                         for (const auto& it : winData->preRenderCallbacks)
                             it.second();
@@ -516,7 +574,7 @@ public:
             return nullptr;
         
         // Non-unique hash? Should be extremely rare! Rename your window if that somehow happens.
-        IM_ASSERT (window->imGuiData->name == name);
+        IM_ASSERT (window->imGuiData->name() == name);
         return window;
     }
 
@@ -537,10 +595,8 @@ private:
     
     WindowData& createDataForWindow (const char* windowName, const char* categoryName)
     {
-        _windowsData.emplace_back(std::make_unique<WindowData>());
+        _windowsData.emplace_back(std::make_unique<WindowData>(windowName));
         auto* winData = _windowsData.back().get();
-        winData->name = windowName;
-        winData->id = ImHashStr(windowName);
         winData->category = categoryName;
         
         auto& cat = findOrCreateCategory(categoryName);
@@ -561,7 +617,7 @@ private:
     WindowData* findDataForWindow (const ImGuiID& windowID)
     {
         for (auto& data : _windowsData)
-            if (data->id == windowID)
+            if (data->id() == windowID)
                 return data.get();
         return nullptr;
     }

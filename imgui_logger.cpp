@@ -130,6 +130,65 @@ Window* FindWindow(const char* windowName)
 namespace GuiThread
 {
 
+static void LoggerSettingsHandler_ClearAll(ImGuiContext* ctx, ImGuiSettingsHandler*)
+{
+    ImGuiContext& g = *ctx;
+    for (int i = 0; i != g.Windows.Size; i++)
+        g.Windows[i]->SettingsOffset = -1;
+    g.SettingsWindows.clear();
+}
+
+static void* LoggerSettingsHandler_ReadOpen(ImGuiContext*, ImGuiSettingsHandler*, const char* name)
+{
+    WindowData& settings = g_Context->windowManager.FindOrCreateDataForWindow(name);
+    return (void*)&settings;
+}
+
+static void LoggerSettingsHandler_ReadLine(ImGuiContext*, ImGuiSettingsHandler*, void* entry, const char* line)
+{
+    WindowData* settings = (WindowData*)entry;
+    int i;
+    if (sscanf(line, "Visible=%d", &i) == 1)
+    {
+        settings->isVisibleRef() = i;
+    }
+}
+
+// Apply to existing windows (if any)
+static void LoggerSettingsHandler_ApplyAll(ImGuiContext* ctx, ImGuiSettingsHandler*)
+{
+}
+
+static void LoggerSettingsHandler_WriteAll(ImGuiContext* ctx, ImGuiSettingsHandler* handler, ImGuiTextBuffer* buf)
+{
+    const auto& windowsData = g_Context->windowManager.windowsData();
+    
+    // Write to text buffer
+    buf->reserve(buf->size() + (int)windowsData.size() * 6); // ballpark reserve
+    for (const auto& winData : windowsData)
+    {
+        buf->appendf("[%s][%s]\n", handler->TypeName, winData->name().c_str());
+        buf->appendf("Visible=%d\n", winData->isVisible());
+        buf->append("\n");
+    }
+}
+
+void Initialize()
+{
+    // Add .ini handle for ImGuiWindow type
+    {
+        ImGuiSettingsHandler ini_handler;
+        ini_handler.TypeName = "CvLogData";
+        ini_handler.TypeHash = ImHashStr("CvLogData");
+        ini_handler.ClearAllFn = LoggerSettingsHandler_ClearAll;
+        ini_handler.ReadOpenFn = LoggerSettingsHandler_ReadOpen;
+        ini_handler.ReadLineFn = LoggerSettingsHandler_ReadLine;
+        ini_handler.ApplyAllFn = LoggerSettingsHandler_ApplyAll;
+        ini_handler.WriteAllFn = LoggerSettingsHandler_WriteAll;
+        ImGui::GetCurrentContext()->SettingsHandlers.push_back(ini_handler);
+    }
+}
+
 void Render()
 {
     {

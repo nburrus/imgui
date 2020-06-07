@@ -150,7 +150,9 @@ void workerThread2()
     // Menu
     [self setupMenu];
     
+    // FIXME: do not require 2 calls..
     ImGui::Logger::Init (self.window);
+    ImGui::Logger::GuiThread::Initialize();
     
     new std::thread([]() {
         workerThread1();

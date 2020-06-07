@@ -33,6 +33,9 @@ public:
 namespace GuiThread
 {
 
+// Required to create the settings handler.
+void Initialize();
+
 // Takes ownership.
 void AddWindow(const char* windowName, std::unique_ptr<Window> window);
 
