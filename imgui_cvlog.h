@@ -14,7 +14,7 @@
 
 namespace ImGui
 {
-namespace Logger
+namespace CVLog
 {
 
 class WindowData;
@@ -42,6 +42,8 @@ void AddWindow(const char* windowName, std::unique_ptr<Window> window);
 void Render();
 
 } // GuiThread
+
+void RunOnceInImGuiThread(const std::function<void(void)>& f);
 
 Window* FindWindow(const char* windowName);
 
@@ -87,5 +89,5 @@ void AddPlotValue(const char* windowName,
                   double xValue);
 
 
-} // Logger
+} // CVLog
 } // ImGui

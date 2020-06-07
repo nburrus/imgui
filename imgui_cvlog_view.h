@@ -1,5 +1,5 @@
 //
-//  imgui_logger_view.hpp
+//  imgui_cvlog_view.hpp
 //  ImguiLogger
 //
 //  Created by Nicolas Burrus on 24/05/2020.
@@ -18,7 +18,7 @@
 
 namespace ImGui
 {
-namespace Logger
+namespace CVLog
 {
 
 void Init(NSWindow* window);

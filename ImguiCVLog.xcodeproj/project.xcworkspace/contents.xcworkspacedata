@@ -2,6 +2,6 @@
 <Workspace
    version = "1.0">
    <FileRef
-      location = "self:ImguiLogger.xcodeproj">
+      location = "self:/Users/nb/Perso/imgui-logger/ImguiCVLog.xcodeproj">
    </FileRef>
 </Workspace>

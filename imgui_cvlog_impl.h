@@ -1,5 +1,5 @@
 //
-//  imgui_logger_impl.h
+//  imgui_cvlog_impl.h
 //  ImguiLogger
 //
 //  Created by Nicolas Burrus on 24/05/2020.
@@ -28,7 +28,7 @@
 
 namespace ImGui
 {
-namespace Logger
+namespace CVLog
 {
 
 class Window;
@@ -655,12 +655,6 @@ struct Context
 };
 
 extern Context* g_Context;
-
-void RunOnceInImGuiThread(const std::function<void(void)>& f)
-{
-    std::lock_guard<std::mutex> _ (g_Context->concurrentTasks.lock);
-    g_Context->concurrentTasks.tasksForNextFrame.emplace_back(f);
-}
 
 // Only from the ImGui thread.
 template <class WindowType>

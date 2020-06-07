@@ -6,13 +6,13 @@
 //  Copyright © 2020 Nicolas Burrus. All rights reserved.
 //
 
-#include "imgui_logger.h"
+#include "imgui_cvlog.h"
 
-#include "imgui_logger_impl.h"
+#include "imgui_cvlog_impl.h"
 
 namespace ImGui
 {
-namespace Logger
+namespace CVLog
 {
 
 Context* g_Context = new Context();
@@ -75,6 +75,12 @@ void SetWindowPreRenderCallback(const char* windowName,
             winData.preRenderCallbacks.erase(callbackNameCopy);
         }
     });
+}
+
+void RunOnceInImGuiThread(const std::function<void(void)>& f)
+{
+    std::lock_guard<std::mutex> _ (g_Context->concurrentTasks.lock);
+    g_Context->concurrentTasks.tasksForNextFrame.emplace_back(f);
 }
 
 void UpdateImage(const char* windowName,
@@ -217,5 +223,5 @@ void AddWindow(const char* windowName, std::unique_ptr<Window> window)
 
 } // GuiThread
 
-} // Logger
+} // CVLog
 } // ImGui

@@ -1,13 +1,13 @@
 //
-//  imgui_logger_view.cpp
+//  imgui_cvlog_view.cpp
 //  ImguiLogger
 //
 //  Created by Nicolas Burrus on 24/05/2020.
 //  Copyright © 2020 Nicolas Burrus. All rights reserved.
 //
 
-#include "imgui_logger_view.h"
-#include "imgui_logger.h"
+#include "imgui_cvlog_view.h"
+#include "imgui_cvlog.h"
 
 #include "imgui/imgui_impl_osx.h"
 #include "imgui/imgui_impl_opengl3.h"
@@ -95,7 +95,7 @@
             ImGui::End();
     }
     
-    ImGui::Logger::GuiThread::Render();
+    ImGui::CVLog::GuiThread::Render();
     
     // Rendering
     ImGui::Render();
@@ -175,7 +175,7 @@
 
 namespace ImGui
 {
-namespace Logger
+namespace CVLog
 {
 
 void Init(NSWindow* window)
@@ -230,4 +230,4 @@ void Init(NSWindow* window)
 }
 
 } // ImGui
-} // Logger
+} // CVLog

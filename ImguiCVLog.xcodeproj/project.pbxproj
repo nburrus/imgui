@@ -18,8 +18,8 @@
 		2D809A3E2479AEA7007845B6 /* imgui_draw.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2D809A382479AEA7007845B6 /* imgui_draw.cpp */; };
 		2D809A4C2479B0CD007845B6 /* implot.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2D809A482479B0CD007845B6 /* implot.cpp */; };
 		2D809A4D2479B0CD007845B6 /* implot_demo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2D809A4A2479B0CD007845B6 /* implot_demo.cpp */; };
-		2D809A502479B7D5007845B6 /* imgui_logger.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2D809A4E2479B7D5007845B6 /* imgui_logger.cpp */; };
-		2D809A5C247A3D68007845B6 /* imgui_logger_view_osx.mm in Sources */ = {isa = PBXBuildFile; fileRef = 2D809A5A247A3D68007845B6 /* imgui_logger_view_osx.mm */; };
+		2D809A502479B7D5007845B6 /* imgui_cvlog.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2D809A4E2479B7D5007845B6 /* imgui_cvlog.cpp */; };
+		2D809A5C247A3D68007845B6 /* imgui_cvlog_view_osx.mm in Sources */ = {isa = PBXBuildFile; fileRef = 2D809A5A247A3D68007845B6 /* imgui_cvlog_view_osx.mm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -35,7 +35,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		2D8098962479A68E007845B6 /* ImguiLogger */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ImguiLogger; sourceTree = BUILT_PRODUCTS_DIR; };
+		2D8098962479A68E007845B6 /* ImguiCVLog */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ImguiCVLog; sourceTree = BUILT_PRODUCTS_DIR; };
 		2D8098992479A68E007845B6 /* main.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = main.mm; sourceTree = "<group>"; };
 		2D8098BC2479A820007845B6 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
 		2D8098BE2479A82B007845B6 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
@@ -59,11 +59,11 @@
 		2D809A492479B0CD007845B6 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		2D809A4A2479B0CD007845B6 /* implot_demo.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = implot_demo.cpp; sourceTree = "<group>"; };
 		2D809A4B2479B0CD007845B6 /* implot.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = implot.h; sourceTree = "<group>"; };
-		2D809A4E2479B7D5007845B6 /* imgui_logger.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = imgui_logger.cpp; sourceTree = "<group>"; };
-		2D809A4F2479B7D5007845B6 /* imgui_logger.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = imgui_logger.h; sourceTree = "<group>"; };
-		2D809A5A247A3D68007845B6 /* imgui_logger_view_osx.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = imgui_logger_view_osx.mm; sourceTree = "<group>"; };
-		2D809A5B247A3D68007845B6 /* imgui_logger_view.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = imgui_logger_view.h; sourceTree = "<group>"; };
-		2D809A5D247A3F8F007845B6 /* imgui_logger_impl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = imgui_logger_impl.h; sourceTree = "<group>"; };
+		2D809A4E2479B7D5007845B6 /* imgui_cvlog.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = imgui_cvlog.cpp; sourceTree = "<group>"; };
+		2D809A4F2479B7D5007845B6 /* imgui_cvlog.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = imgui_cvlog.h; sourceTree = "<group>"; };
+		2D809A5A247A3D68007845B6 /* imgui_cvlog_view_osx.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = imgui_cvlog_view_osx.mm; sourceTree = "<group>"; };
+		2D809A5B247A3D68007845B6 /* imgui_cvlog_view.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = imgui_cvlog_view.h; sourceTree = "<group>"; };
+		2D809A5D247A3F8F007845B6 /* imgui_cvlog_impl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = imgui_cvlog_impl.h; sourceTree = "<group>"; };
 		2DB25AD32483B6FC0029FF8F /* TODO.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TODO.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -87,11 +87,11 @@
 				2D809A462479B0CD007845B6 /* implot */,
 				2D809A2A2479AEA7007845B6 /* imgui */,
 				2D8098992479A68E007845B6 /* main.mm */,
-				2D809A4E2479B7D5007845B6 /* imgui_logger.cpp */,
-				2D809A4F2479B7D5007845B6 /* imgui_logger.h */,
-				2D809A5D247A3F8F007845B6 /* imgui_logger_impl.h */,
-				2D809A5A247A3D68007845B6 /* imgui_logger_view_osx.mm */,
-				2D809A5B247A3D68007845B6 /* imgui_logger_view.h */,
+				2D809A4E2479B7D5007845B6 /* imgui_cvlog.cpp */,
+				2D809A4F2479B7D5007845B6 /* imgui_cvlog.h */,
+				2D809A5D247A3F8F007845B6 /* imgui_cvlog_impl.h */,
+				2D809A5A247A3D68007845B6 /* imgui_cvlog_view_osx.mm */,
+				2D809A5B247A3D68007845B6 /* imgui_cvlog_view.h */,
 				2D8098972479A68E007845B6 /* Products */,
 				2D8098BB2479A81F007845B6 /* Frameworks */,
 			);
@@ -100,7 +100,7 @@
 		2D8098972479A68E007845B6 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				2D8098962479A68E007845B6 /* ImguiLogger */,
+				2D8098962479A68E007845B6 /* ImguiCVLog */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -151,9 +151,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		2D8098952479A68E007845B6 /* ImguiLogger */ = {
+		2D8098952479A68E007845B6 /* ImguiCVLog */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 2D80989D2479A68E007845B6 /* Build configuration list for PBXNativeTarget "ImguiLogger" */;
+			buildConfigurationList = 2D80989D2479A68E007845B6 /* Build configuration list for PBXNativeTarget "ImguiCVLog" */;
 			buildPhases = (
 				2D8098922479A68E007845B6 /* Sources */,
 				2D8098932479A68E007845B6 /* Frameworks */,
@@ -163,9 +163,9 @@
 			);
 			dependencies = (
 			);
-			name = ImguiLogger;
+			name = ImguiCVLog;
 			productName = ImguiLogger;
-			productReference = 2D8098962479A68E007845B6 /* ImguiLogger */;
+			productReference = 2D8098962479A68E007845B6 /* ImguiCVLog */;
 			productType = "com.apple.product-type.tool";
 		};
 /* End PBXNativeTarget section */
@@ -182,7 +182,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 2D8098912479A68E007845B6 /* Build configuration list for PBXProject "ImguiLogger" */;
+			buildConfigurationList = 2D8098912479A68E007845B6 /* Build configuration list for PBXProject "ImguiCVLog" */;
 			compatibilityVersion = "Xcode 9.3";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -195,7 +195,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				2D8098952479A68E007845B6 /* ImguiLogger */,
+				2D8098952479A68E007845B6 /* ImguiCVLog */,
 			);
 		};
 /* End PBXProject section */
@@ -210,11 +210,11 @@
 				2D809A3E2479AEA7007845B6 /* imgui_draw.cpp in Sources */,
 				2D80989A2479A68E007845B6 /* main.mm in Sources */,
 				2D809A3D2479AEA7007845B6 /* imgui_demo.cpp in Sources */,
-				2D809A502479B7D5007845B6 /* imgui_logger.cpp in Sources */,
+				2D809A502479B7D5007845B6 /* imgui_cvlog.cpp in Sources */,
 				2D809A392479AEA7007845B6 /* imgui_widgets.cpp in Sources */,
 				2D809A4D2479B0CD007845B6 /* implot_demo.cpp in Sources */,
 				2D809A3B2479AEA7007845B6 /* imgui_impl_opengl3.cpp in Sources */,
-				2D809A5C247A3D68007845B6 /* imgui_logger_view_osx.mm in Sources */,
+				2D809A5C247A3D68007845B6 /* imgui_cvlog_view_osx.mm in Sources */,
 				2D809A3A2479AEA7007845B6 /* imgui.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -350,7 +350,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		2D8098912479A68E007845B6 /* Build configuration list for PBXProject "ImguiLogger" */ = {
+		2D8098912479A68E007845B6 /* Build configuration list for PBXProject "ImguiCVLog" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				2D80989B2479A68E007845B6 /* Debug */,
@@ -359,7 +359,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		2D80989D2479A68E007845B6 /* Build configuration list for PBXNativeTarget "ImguiLogger" */ = {
+		2D80989D2479A68E007845B6 /* Build configuration list for PBXNativeTarget "ImguiCVLog" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				2D80989E2479A68E007845B6 /* Debug */,

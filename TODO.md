@@ -1,5 +1,6 @@
 #  TODO
  
+- Rename to CVLog
 - Presets for the layouts
 - Plot widget that allows zooming, etc. While still having a good auto-scaling
     - Ensure  a good aspect ratio too
