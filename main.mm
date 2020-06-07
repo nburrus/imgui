@@ -9,7 +9,7 @@
 // dear imgui: standalone example application for OSX + OpenGL2, using legacy fixed pipeline
 // If you are new to dear imgui, see examples/README.txt and documentation at the top of imgui.cpp.
 
-#include "imgui_cvlog.h"
+#include "imgui_cvlog_demo.h"
 #include "imgui_cvlog_view.h"
 #include "imgui.h"
 
@@ -152,7 +152,7 @@ void workerThread2()
     
     // FIXME: do not require 2 calls..
     ImGui::CVLog::Init (self.window);
-    ImGui::CVLog::GuiThread::Initialize();
+    ImGui::CVLog::Initialize();
     
     new std::thread([]() {
         workerThread1();

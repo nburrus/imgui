@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2D19DDBA248D842C00AAD3E3 /* imgui_cvlog_demo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2D19DDB8248D842C00AAD3E3 /* imgui_cvlog_demo.cpp */; };
 		2D80989A2479A68E007845B6 /* main.mm in Sources */ = {isa = PBXBuildFile; fileRef = 2D8098992479A68E007845B6 /* main.mm */; };
 		2D8098BF2479A82B007845B6 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2D8098BE2479A82B007845B6 /* Cocoa.framework */; };
 		2D8098C82479AAC0007845B6 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2D8098BC2479A820007845B6 /* OpenGL.framework */; };
@@ -35,6 +36,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		2D19DDB8248D842C00AAD3E3 /* imgui_cvlog_demo.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = imgui_cvlog_demo.cpp; sourceTree = "<group>"; };
+		2D19DDB9248D842C00AAD3E3 /* imgui_cvlog_demo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = imgui_cvlog_demo.h; sourceTree = "<group>"; };
 		2D8098962479A68E007845B6 /* ImguiCVLog */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ImguiCVLog; sourceTree = BUILT_PRODUCTS_DIR; };
 		2D8098992479A68E007845B6 /* main.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = main.mm; sourceTree = "<group>"; };
 		2D8098BC2479A820007845B6 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
@@ -63,7 +66,6 @@
 		2D809A4F2479B7D5007845B6 /* imgui_cvlog.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = imgui_cvlog.h; sourceTree = "<group>"; };
 		2D809A5A247A3D68007845B6 /* imgui_cvlog_view_osx.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = imgui_cvlog_view_osx.mm; sourceTree = "<group>"; };
 		2D809A5B247A3D68007845B6 /* imgui_cvlog_view.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = imgui_cvlog_view.h; sourceTree = "<group>"; };
-		2D809A5D247A3F8F007845B6 /* imgui_cvlog_impl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = imgui_cvlog_impl.h; sourceTree = "<group>"; };
 		2DB25AD32483B6FC0029FF8F /* TODO.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TODO.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -89,7 +91,8 @@
 				2D8098992479A68E007845B6 /* main.mm */,
 				2D809A4E2479B7D5007845B6 /* imgui_cvlog.cpp */,
 				2D809A4F2479B7D5007845B6 /* imgui_cvlog.h */,
-				2D809A5D247A3F8F007845B6 /* imgui_cvlog_impl.h */,
+				2D19DDB9248D842C00AAD3E3 /* imgui_cvlog_demo.h */,
+				2D19DDB8248D842C00AAD3E3 /* imgui_cvlog_demo.cpp */,
 				2D809A5A247A3D68007845B6 /* imgui_cvlog_view_osx.mm */,
 				2D809A5B247A3D68007845B6 /* imgui_cvlog_view.h */,
 				2D8098972479A68E007845B6 /* Products */,
@@ -207,6 +210,7 @@
 			files = (
 				2D809A4C2479B0CD007845B6 /* implot.cpp in Sources */,
 				2D809A3C2479AEA7007845B6 /* imgui_impl_osx.mm in Sources */,
+				2D19DDBA248D842C00AAD3E3 /* imgui_cvlog_demo.cpp in Sources */,
 				2D809A3E2479AEA7007845B6 /* imgui_draw.cpp in Sources */,
 				2D80989A2479A68E007845B6 /* main.mm in Sources */,
 				2D809A3D2479AEA7007845B6 /* imgui_demo.cpp in Sources */,

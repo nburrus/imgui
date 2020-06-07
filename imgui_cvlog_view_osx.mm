@@ -95,7 +95,7 @@
             ImGui::End();
     }
     
-    ImGui::CVLog::GuiThread::Render();
+    ImGui::CVLog::Render();
     
     // Rendering
     ImGui::Render();
