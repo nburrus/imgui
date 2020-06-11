@@ -15,6 +15,10 @@
 #include <string>
 #include <vector>
 #include <thread>
+#include <fstream>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 namespace ImGui
 {
@@ -227,46 +231,100 @@ public:
         }
     }
     
+    void MaybeRenderSaveCurrentLayout(const char* popupName)
+    {
+        if (ImGui::BeginPopupModal(popupName, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+        {
+            ImGui::InputText("Name of the layout", _pathBuffer, 256);
+            ImGui::Text("(Will be written to %s)", fs::current_path().c_str());
+            
+            if (ImGui::Button("OK", ImVec2(120, 0)))
+            {
+                std::string fullName = _pathBuffer + std::string(".ini");
+                
+                if (!std::ofstream(fullName))
+                {
+                    throw std::runtime_error(("Could not write to " + fs::current_path().string() + '/' + fullName).c_str());
+                }
+                else
+                {
+                    ImGui::SaveIniSettingsToDisk(fullName.c_str());
+                }
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SetItemDefaultFocus();
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+            ImGui::EndPopup();
+        }
+    }
+    
     void Render()
     {
         auto& IO = ImGui::GetIO();
         ImGui::SetNextWindowPos(ImVec2(0,0), ImGuiCond_Always);
         ImGui::SetNextWindowSize(ImVec2(windowListWidth, IO.DisplaySize.y), ImGuiCond_Always);
-        if (ImGui::Begin("Window List", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove))
+        if (ImGui::Begin("Window List", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_MenuBar))
         {
-            bool allHidden = true;
-            for (const auto& win : _windows)
-            {
-                if (win->imGuiData->isVisible())
-                {
-                    allHidden = false;
-                    break;
-                }
-            }
+            bool openSavePopup = false;
             
-            if (allHidden)
+            if (ImGui::BeginMenuBar())
             {
-                if (ImGui::Button("Show All"))
+                if (ImGui::BeginMenu("Preset"))
                 {
-                    for (const auto& win : _windows)
-                        win->imGuiData->isVisibleRef() = true;
+                    if (ImGui::MenuItem("Save Layout As..."))
+                    {
+                        openSavePopup = true;
+                    }
+                    
+                    if (ImGui::BeginMenu("Load Preset"))
+                    {
+                        for(const auto& p: fs::directory_iterator(fs::current_path()))
+                        {
+                            if (p.path().extension() != ".ini")
+                                continue;
+                            
+                            if (ImGui::MenuItem(p.path().filename().c_str()))
+                            {
+                                ImGui::LoadIniSettingsFromDisk(p.path().c_str());
+                            }
+                        }
+                                                
+                        ImGui::EndMenu();
+                    }
+                    
+                    ImGui::EndMenu();
                 }
-            }
-            else
-            {
-                if (ImGui::Button("Hide All"))
+                
+                if (ImGui::BeginMenu("Windows"))
                 {
-                    for (const auto& win : _windows)
-                        win->imGuiData->isVisibleRef() = false;
-                }
-            }
+                    if (ImGui::MenuItem("Show All"))
+                    {
+                        for (const auto& win : _windows)
+                            win->imGuiData->isVisibleRef() = true;
+                    }
 
-            ImGui::SameLine();
-            if (ImGui::Button("Auto-Tile"))
-            {
-                TileAndScaleVisibleWindows();
+                    if (ImGui::MenuItem("Hide All"))
+                    {
+                        for (const auto& win : _windows)
+                            win->imGuiData->isVisibleRef() = false;
+                    }
+                    
+                    if (ImGui::MenuItem("Tile Windows"))
+                    {
+                        TileAndScaleVisibleWindows();
+                    }
+                    
+                    ImGui::EndMenu();
+                }
+                                    
+                // We need OpenPopup and BeginPopup to be at the same level.
+                if (openSavePopup)
+                    ImGui::OpenPopup("Save windows layout as...");
+                MaybeRenderSaveCurrentLayout("Save windows layout as...");
             }
-            
+            ImGui::EndMenuBar();
+                        
             for (auto& cat : _windowsPerCategory)
             {
                 // 3-state checkbox for all the windows in the category.
@@ -453,6 +511,7 @@ private:
     std::vector<std::unique_ptr<Window>> _windows;
     std::vector<std::unique_ptr<WindowData>> _windowsData;
     std::vector<WindowCategory> _windowsPerCategory;
+    char _pathBuffer[256];
 };
 
 struct Context
