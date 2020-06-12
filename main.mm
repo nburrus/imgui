@@ -78,19 +78,22 @@ void workerThread1()
     int i = 0;
     while (true)
     {
-        auto imagePtr = std::make_shared<ImGui::CVLog::Image>();
-        imagePtr->width = 640;
-        imagePtr->height = 480;
-        imagePtr->bytesPerRow = imagePtr->width;
-        imagePtr->data.resize (imagePtr->bytesPerRow * imagePtr->height);
-        for (int r = 0; r < imagePtr->height; ++r)
-        for (int c = 0; c < imagePtr->width; ++c)
+        if (ImGui::CVLog::WindowIsVisible("VGAImage"))
         {
-            const int idx = r*imagePtr->bytesPerRow + c;
-            imagePtr->data[idx] = (c+r+i*i)%255;
+            auto imagePtr = std::make_shared<ImGui::CVLog::Image>();
+            imagePtr->width = 640;
+            imagePtr->height = 480;
+            imagePtr->bytesPerRow = imagePtr->width;
+            imagePtr->data.resize (imagePtr->bytesPerRow * imagePtr->height);
+            for (int r = 0; r < imagePtr->height; ++r)
+                for (int c = 0; c < imagePtr->width; ++c)
+                {
+                    const int idx = r*imagePtr->bytesPerRow + c;
+                    imagePtr->data[idx] = (c+r+i*i)%255;
+                }
+            
+            ImGui::CVLog::UpdateImage("VGAImage", imagePtr);
         }
-        
-        ImGui::CVLog::UpdateImage("VGAImage", imagePtr);
         
         for (int k = 0; k < 10; ++k)
         {
@@ -117,19 +120,22 @@ void workerThread2()
     int i = 0;
     while (true)
     {
-        auto imagePtr = std::make_shared<ImGui::CVLog::Image>();
-        imagePtr->width = 320;
-        imagePtr->height = 240;
-        imagePtr->bytesPerRow = imagePtr->width;
-        imagePtr->data.resize (imagePtr->bytesPerRow * imagePtr->height);
-        for (int r = 0; r < imagePtr->height; ++r)
-        for (int c = 0; c < imagePtr->width; ++c)
+        if (ImGui::CVLog::WindowIsVisible("SmallImage with a very long name that won't fit"))
         {
-            const int idx = r*imagePtr->bytesPerRow + c;
-            imagePtr->data[idx] = (c+r+offset)%255;
-        }
+            auto imagePtr = std::make_shared<ImGui::CVLog::Image>();
+            imagePtr->width = 320;
+            imagePtr->height = 240;
+            imagePtr->bytesPerRow = imagePtr->width;
+            imagePtr->data.resize (imagePtr->bytesPerRow * imagePtr->height);
+            for (int r = 0; r < imagePtr->height; ++r)
+                for (int c = 0; c < imagePtr->width; ++c)
+                {
+                    const int idx = r*imagePtr->bytesPerRow + c;
+                    imagePtr->data[idx] = (c+r+offset)%255;
+                }
         
-        ImGui::CVLog::UpdateImage("SmallImage with a very long name that won't fit", imagePtr);
+            ImGui::CVLog::UpdateImage("SmallImage with a very long name that won't fit", imagePtr);
+        }
         
         ImGui::CVLog::AddPlotValue("Plot1", "Live", log(i*i + 1), i);
         ImGui::CVLog::AddPlotValue("Plot1", "GT", log(i*i + 1) + 1, i);

@@ -105,12 +105,6 @@ public:
         data.layoutUpdateOnNextFrame.pos.y = (float(rand()) / float(RAND_MAX)) * availableHeight;
         data.layoutUpdateOnNextFrame.imGuiCond = ImGuiCond_FirstUseEver;
         data.layoutUpdateOnNextFrame.hasData = true;
-        
-        {
-            std::lock_guard<std::mutex> _(concurrent.lock);
-            concurrent.windowsByID.SetVoidPtr(data.id(), window);
-        }
-        
         return data;
     }
     
@@ -366,7 +360,8 @@ public:
                     const bool disabled = (winData->window == nullptr);
                     if (disabled)
                     {
-                        ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+                        // Let us still enable the window in case the update code is conditioned by isVisible.
+                        // ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
                         ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
                     }
                     
@@ -388,7 +383,7 @@ public:
                     
                     if (disabled)
                     {
-                        ImGui::PopItemFlag();
+                        // ImGui::PopItemFlag();
                         ImGui::PopStyleVar();
                     }
                 }
@@ -435,25 +430,24 @@ public:
         }
     }
     
-    Window* ConcurrentFindWindowById(ImGuiID id)
+    WindowData* ConcurrentFindWindowById(ImGuiID id)
     {
         void* window = concurrent.windowsByID.GetVoidPtr(id);
-        return reinterpret_cast<Window*>(window);
+        return reinterpret_cast<WindowData*>(window);
     }
 
-    Window* ConcurrentFindWindow (const char* name)
+    WindowData* ConcurrentFindWindow (const char* name)
     {
         ImGuiID id = ImHashStr(name);
-        Window* window = ConcurrentFindWindowById(id);
+        WindowData* windowData = ConcurrentFindWindowById(id);
         
-        if (window == nullptr)
+        if (windowData == nullptr)
             return nullptr;
         
         // Non-unique hash? Should be extremely rare! Rename your window if that somehow happens.
-        IM_ASSERT (window->imGuiData->name() == name);
-        return window;
+        IM_ASSERT (windowData->name() == name);
+        return windowData;
     }
-
     
 private:
     void helpMarker(const char* desc)
@@ -477,6 +471,12 @@ private:
         
         auto& cat = findOrCreateCategory(categoryName);
         cat.windows.emplace_back(winData);
+        
+        {
+            std::lock_guard<std::mutex> _(concurrent.lock);
+            concurrent.windowsByID.SetVoidPtr(winData->id(), winData);
+        }
+
         return *winData;
     }
     
@@ -544,6 +544,13 @@ Context* g_Context = new Context();
 const char* Window::name() const
 {
     return imGuiData->name().c_str();
+}
+
+bool Window::isVisible() const
+{
+    // Thread-safety is not a real issue here since it's just a boolean,
+    // no not taking any locking for performance reasons.
+    return imGuiData->isVisible();
 }
 
 void SetPerFrameCallback(const char* callbackName,
@@ -614,18 +621,28 @@ void RunOnceInImGuiThread(const std::function<void(void)>& f)
 
 Window* FindOrCreateWindow(const char* name, const std::function<Window*(void)>& createWindowFunc)
 {
-    Window* window = g_Context->windowManager.ConcurrentFindWindow(name);
-    if (window)
-        return window;
+    WindowData* windowData = g_Context->windowManager.ConcurrentFindWindow(name);
+    if (windowData && windowData->window)
+        return windowData->window;
     
     auto* concreteWindow = createWindowFunc();
     g_Context->windowManager.AddWindow(name, std::unique_ptr<Window>(concreteWindow));
     return concreteWindow;
 }
 
+bool WindowIsVisible(const char* windowName)
+{
+    auto* windowData = g_Context->windowManager.ConcurrentFindWindow(windowName);
+    return windowData && windowData ->isVisible();
+}
+
 Window* FindWindow(const char* windowName)
 {
-    return g_Context->windowManager.ConcurrentFindWindow(windowName);
+    auto* windowData = g_Context->windowManager.ConcurrentFindWindow(windowName);
+    if (windowData)
+        return windowData->window;
+    else
+        return nullptr;
 }
 
 static void LoggerSettingsHandler_ClearAll(ImGuiContext* ctx, ImGuiSettingsHandler*)

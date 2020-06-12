@@ -29,6 +29,10 @@ class ImageWindow : public Window
 public:
     void UpdateImage (const ImagePtr& newImage)
     {
+        // Don't update it if it's not visible to save on CPU time.
+        if (!isVisible())
+            return;
+        
         std::lock_guard<std::mutex> _ (concurrent.imageLock);
         concurrent.image = newImage;
     }
@@ -125,6 +129,10 @@ public:
                       float yValue,
                       float xValue)
     {
+        // Don't update it if it's not visible to save on CPU time.
+        if (!isVisible())
+            return;
+        
         std::lock_guard<std::mutex> _ (concurrent.lock);
         ImGuiID groupId = ImHashStr(groupName);
         concurrent.dataSinceLastFrame.push_back({groupId,xValue,yValue});

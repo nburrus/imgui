@@ -71,11 +71,17 @@ public:
     virtual void Render() = 0;
     
     const char* name() const;
+    bool isVisible() const;
     
 public:
     // Only access it from the ImGui thread, unless otherwise specified.
     WindowData* imGuiData = nullptr; // will get filled once added to the context.
 };
+
+/*!
+- Thread safety: any thread.
+*/
+bool WindowIsVisible(const char* windowName);
 
 /*!
 - Thread safety: any thread.
