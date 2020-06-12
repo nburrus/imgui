@@ -53,7 +53,17 @@ public:
     
     std::string category = defaultCategoryName();
     
-    ImVec2 preferredSize = ImVec2(320,240);
+    ImVec2 preferredContentSize = ImVec2(320,240);
+    
+    ImVec2 preferredWindowSize() const
+    {
+        auto& style = ImGui::GetStyle();
+        float extraHeight = style.FramePadding.y * 2.f + ImGui::GetFontSize();
+        auto finalSize = preferredContentSize;
+        finalSize.y += extraHeight;
+        return finalSize;
+    }
+    
     std::string helpString = "No help specified";
         
     struct
@@ -96,10 +106,11 @@ public:
         window->imGuiData = &data;
         
         auto& IO = ImGui::GetIO();
-        data.layoutUpdateOnNextFrame.size = data.preferredSize;
+        const auto preferredWindowSize = data.preferredWindowSize();
+        data.layoutUpdateOnNextFrame.size = preferredWindowSize;
         
-        const float availableWidth = std::max(0.f, (IO.DisplaySize.x - windowListWidth - data.preferredSize.x));
-        const float availableHeight = std::max(0.f, (IO.DisplaySize.y - data.preferredSize.y));
+        const float availableWidth = std::max(0.f, (IO.DisplaySize.x - windowListWidth - preferredWindowSize.x));
+        const float availableHeight = std::max(0.f, (IO.DisplaySize.y - preferredWindowSize.y));
         
         data.layoutUpdateOnNextFrame.pos.x = windowListWidth + (float(rand()) / float(RAND_MAX)) * availableWidth;
         data.layoutUpdateOnNextFrame.pos.y = (float(rand()) / float(RAND_MAX)) * availableHeight;
@@ -131,7 +142,7 @@ public:
     WindowData& SetWindowPreferredSize (const char* windowName, const ImVec2& preferredSize)
     {
         auto& data = FindOrCreateDataForWindow(windowName);
-        data.preferredSize = preferredSize;
+        data.preferredContentSize = preferredSize;
         return data;
     }
     
@@ -156,13 +167,13 @@ public:
         auto& IO = ImGui::GetIO();
         
         auto isWindowHeightSmaller = [](const Window* w1, const Window* w2) {
-            if (w1->imGuiData->preferredSize.y < w2->imGuiData->preferredSize.y)
+            if (w1->imGuiData->preferredContentSize.y < w2->imGuiData->preferredContentSize.y)
                 return true;
-            if (w1->imGuiData->preferredSize.y > w2->imGuiData->preferredSize.y)
+            if (w1->imGuiData->preferredContentSize.y > w2->imGuiData->preferredContentSize.y)
                 return false;
-            if (w1->imGuiData->preferredSize.x < w2->imGuiData->preferredSize.x)
+            if (w1->imGuiData->preferredContentSize.x < w2->imGuiData->preferredContentSize.x)
                 return true;
-            if (w1->imGuiData->preferredSize.x > w2->imGuiData->preferredSize.x)
+            if (w1->imGuiData->preferredContentSize.x > w2->imGuiData->preferredContentSize.x)
                 return false;
             return w1->imGuiData->name() < w2->imGuiData->name();
         };
@@ -193,8 +204,9 @@ public:
                 if (!winData->isVisible())
                     continue;
                 
-                ImVec2 scaledWinSize (winData->preferredSize.x*scaleFactor,
-                                      winData->preferredSize.y*scaleFactor);
+                auto preferredSize = winData->preferredWindowSize();
+                ImVec2 scaledWinSize (preferredSize.x*scaleFactor,
+                                      preferredSize.y*scaleFactor);
                 
                 // Start new row?
                 if (currentX > startX && currentX + scaledWinSize.x > endX)
@@ -409,6 +421,7 @@ public:
                 {
                     ImGui::BeginTooltip();
                     ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+                    ImGui::TextUnformatted(winData->name().c_str());
                     ImGui::TextUnformatted(winData->helpString.c_str());
                     ImGui::PopTextWrapPos();
                     ImGui::EndTooltip();
@@ -587,10 +600,10 @@ void SetWindowProperties(const char* windowName,
             winData.helpString = helpStringCopy;
         
         if (preferredWidth > 0)
-            winData.preferredSize.x = preferredWidth;
+            winData.preferredContentSize.x = preferredWidth;
         
         if (preferredHeight > 0)
-            winData.preferredSize.y = preferredHeight;
+            winData.preferredContentSize.y = preferredHeight;
     });
 }
 

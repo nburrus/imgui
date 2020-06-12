@@ -71,13 +71,21 @@ public:
         
         if (ImGui::Begin(name()))
         {
-            float aspectRatio = float(imageToShow->height) / imageToShow->width;
-            ImVec2 wSize = ImGui::GetWindowSize();
-            
-            ImGui::BulletText("ImageWindow content");
-            ImGui::BulletText("Width: %d", imageToShow->width);
-            ImGui::BulletText("Height: %d", imageToShow->height);
-            ImGui::Image((void*)(intptr_t)_textureID, ImVec2(wSize.x, wSize.x*aspectRatio));
+            //            ImGui::BulletText("ImageWindow content");
+            //            ImGui::BulletText("Width: %d", imageToShow->width);
+            //            ImGui::BulletText("Height: %d", imageToShow->height);
+
+            float inputImageAspectRatio = float(imageToShow->height) / imageToShow->width;
+            ImVec2 wSize = ImGui::GetContentRegionAvail();
+            float windowContentAspectRatio = wSize.y / wSize.x;
+            if (inputImageAspectRatio <  windowContentAspectRatio)
+            {
+                ImGui::Image((void*)(intptr_t)_textureID, ImVec2(wSize.x, wSize.x*inputImageAspectRatio));
+            }
+            else
+            {
+                ImGui::Image((void*)(intptr_t)_textureID, ImVec2(wSize.y/inputImageAspectRatio, wSize.y));
+            }
         }
         ImGui::End();
     }
