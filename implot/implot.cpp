@@ -385,8 +385,12 @@ struct ImPlotContext {
     int DigitalPlotOffset;
 };
 
-/// Global plot context
-static ImPlotContext gp;
+/// Global plot context.
+/// Set IMPLOT_THREAD_LOCAL to 1 in imconfig.h to use ImPlot with multiple threads.
+#ifndef IMPLOT_THREAD_LOCAL
+# define IMPLOT_THREAD_LOCAL
+#endif
+static IMPLOT_THREAD_LOCAL ImPlotContext gp;
 
 //-----------------------------------------------------------------------------
 // Utils
