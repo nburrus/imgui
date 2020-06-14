@@ -84,9 +84,23 @@ public:
 };
 
 /*!
+ Returns whether a window is visible or not.
+ 
+ See CVLOG_FAST_VISIBLITY_CHECK for a fast direct access.
+
 - Thread safety: any thread.
 */
-bool WindowIsVisible(const char* windowName);
+bool WindowIsVisible(const char* windowName, bool** persistentAddressOfFlag = nullptr);
+
+/*!
+ Creates a static boolean with the direct address of the visible flag.
+ 
+ This is faster than calling WindowIsVisible since it does not need to compute
+ a hash nor grab a mutex to retrieve the window data.
+*/
+#define CVLOG_FAST_VISIBLITY_CHECK(BoolName, WindowName) \
+    static bool* BoolName##DirectPointer = nullptr; \
+    const bool BoolName = (BoolName##DirectPointer ? *BoolName##DirectPointer : ImGui::CVLog::WindowIsVisible(WindowName, &BoolName##DirectPointer));
 
 /*!
 - Thread safety: any thread.

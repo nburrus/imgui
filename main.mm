@@ -78,7 +78,8 @@ void workerThread1()
     int i = 0;
     while (true)
     {
-        if (ImGui::CVLog::WindowIsVisible("VGAImage"))
+        CVLOG_FAST_VISIBLITY_CHECK(isVgaImageVisible, "VGAImage");
+        if (isVgaImageVisible)
         {
             auto imagePtr = std::make_shared<ImGui::CVLog::Image>();
             imagePtr->width = 640;

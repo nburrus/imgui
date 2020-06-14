@@ -645,10 +645,12 @@ Window* FindOrCreateWindow(const char* name, const std::function<Window*(void)>&
     return concreteWindow;
 }
 
-bool WindowIsVisible(const char* windowName)
+bool WindowIsVisible(const char* windowName, bool** persistentAddressOfFlag)
 {
     auto* windowData = g_Context->windowManager.ConcurrentFindWindow(windowName);
-    return windowData && windowData ->isVisible();
+    if (persistentAddressOfFlag)
+        *persistentAddressOfFlag = windowData ? &(windowData->isVisibleRef()) : nullptr;
+    return windowData && windowData->isVisible();
 }
 
 Window* FindWindow(const char* windowName)
