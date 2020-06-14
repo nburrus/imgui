@@ -37,7 +37,8 @@ void UpdateImage(const char* windowName,
 void AddPlotValue(const char* windowName,
                   const char* groupName,
                   double yValue,
-                  double xValue);
+                  double xValue,
+                  const char* style = nullptr);
 
 
 } // CVLog

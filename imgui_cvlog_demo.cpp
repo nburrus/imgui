@@ -147,28 +147,38 @@ class PlotWindow : public Window
 public:
     void AddPlotValue(const char* groupName,
                       float yValue,
-                      float xValue)
+                      float xValue,
+                      const char* style)
     {
         // Don't update it if it's not visible to save on CPU time.
         if (!isVisible())
             return;
         
-        std::lock_guard<std::mutex> _ (concurrent.lock);
         ImGuiID groupId = ImHashStr(groupName);
+        std::lock_guard<std::mutex> _ (concurrent.lock);
         concurrent.dataSinceLastFrame.push_back({groupId,xValue,yValue});
         if (!concurrent.existingGroups.GetBool(groupId))
-            concurrent.addedGroupsSinceLastFrame.push_back(groupName);
+        {
+            GroupToAdd group;
+            group.name = groupName;
+            group.style = style ? style : "";
+            concurrent.addedGroupsSinceLastFrame.push_back(group);
+        }
     }
-        
+            
     void Render() override
     {
         {
             std::lock_guard<std::mutex> _ (concurrent.lock);
             _cacheOfDataToAppend.swap (concurrent.dataSinceLastFrame);
-            for (const auto& groupName : concurrent.addedGroupsSinceLastFrame)
+            for (const auto& group : concurrent.addedGroupsSinceLastFrame)
             {
-                ImGuiID groupId = ImHashStr(groupName.c_str());
-                _groupData[groupId].name = groupName;
+                ImGuiID groupId = ImHashStr(group.name.c_str());
+                _groupData[groupId].name = group.name;
+                if (!group.style.empty())
+                {
+                    parseAndFillStyle (group.style, _groupData[groupId]);
+                }
                 concurrent.existingGroups.SetBool(groupId, true);
             }
         }
@@ -204,13 +214,31 @@ public:
                 
         if (Begin(nullptr))
         {
-            ImPlot::SetNextPlotLimits(_dataBounds.xMin, _dataBounds.xMax, _dataBounds.yMin, _dataBounds.yMax, ImGuiCond_Always);
-            if (ImPlot::BeginPlot("Line Plot", "x", "f(x)"))
+            if (_autoFitEnabled)
             {
+                ImPlot::SetNextPlotLimitsX(_dataBounds.xMin, _dataBounds.xMax, ImGuiCond_Always);
+                ImPlot::SetNextPlotLimitsY(_dataBounds.yMin, _dataBounds.yMax, ImGuiCond_Always);
+            }
+            
+            ImVec2 plotSize = ImGui::GetContentRegionAvail();
+            if (ImPlot::BeginPlot("##NoTitle" /* title */, nullptr /* xLabel */, nullptr /* yLabel */, plotSize))
+            {
+                if (ImPlot::IsXAxisAutoFitRequested() && ImPlot::IsYAxisAutoFitRequested())
+                {
+                    _autoFitEnabled = !_autoFitEnabled;
+                }
+
                 for (const auto& it : _groupData)
                 {
+                    if (it.second.hasCustomLineColor)
+                        ImPlot::PushStyleColor(ImPlotCol_Line, it.second.lineColor);
+                    
                     ImPlot::PlotLine(it.second.name.c_str(), it.second.xData.data(), it.second.yData.data(), (int)it.second.xData.size());
+                    
+                    if (it.second.hasCustomLineColor)
+                        ImPlot::PopStyleColor();
                 }
+                
                 ImPlot::EndPlot();
             }
         }
@@ -221,6 +249,10 @@ private:
     struct GroupData
     {
         std::string name;
+        
+        bool hasCustomLineColor;
+        ImVec4 lineColor;
+        
         std::vector<float> xData;
         std::vector<float> yData;
         float xMin = 0;
@@ -236,15 +268,38 @@ private:
         float yValue;
     };
     
+    struct GroupToAdd
+    {
+        std::string name;
+        std::string style;
+    };
+    
+private:
+    void parseAndFillStyle(const std::string& style, GroupData& group)
+    {
+        IM_ASSERT (style[0] == '#'); // only support format is #RRGGBB in hexidecimal, e.g. #ff000000 for red.
+        int r, g, b, a;
+        if (sscanf(style.c_str(), "#%02x%02x%02x%02x", &r, &g, &b, &a) == 4)
+        {
+            group.lineColor = ImVec4(r,g,b,a);
+            group.hasCustomLineColor = true;
+        }
+        else
+        {
+            IM_ASSERT(false); // "Could not parse color string");
+        }
+    }
+    
+private:
+    std::unordered_map<ImGuiID,GroupData> _groupData;
+    std::vector<DataToAppend> _cacheOfDataToAppend;
+        
     struct {
         std::mutex lock;
         std::vector<DataToAppend> dataSinceLastFrame;
-        std::vector<std::string> addedGroupsSinceLastFrame;
+        std::vector<GroupToAdd> addedGroupsSinceLastFrame;
         ImGuiStorage existingGroups;
     } concurrent;
-    
-    std::unordered_map<ImGuiID,GroupData> _groupData;
-    std::vector<DataToAppend> _cacheOfDataToAppend;
     
     struct {
         float xMin = 0;
@@ -252,19 +307,22 @@ private:
         float yMin = 0;
         float yMax = 1;
     } _dataBounds; // across all groups.
+    
+    bool _autoFitEnabled = true;
 };
 
 void AddPlotValue(const char* windowName,
                   const char* groupName,
                   double yValue,
-                  double xValue)
+                  double xValue,
+                  const char* style)
 {
     PlotWindow* plotWindow = FindWindow<PlotWindow> (windowName);
     
     // The window exists, just update the data.
     if (plotWindow)
     {
-        plotWindow->AddPlotValue(groupName, yValue, xValue);
+        plotWindow->AddPlotValue(groupName, yValue, xValue, style);
         return;
     }
     
@@ -272,9 +330,10 @@ void AddPlotValue(const char* windowName,
     {
         std::string windowNameCopy = windowName;
         std::string groupNameCopy = groupName;
-        RunOnceInImGuiThread([windowNameCopy,groupNameCopy,xValue,yValue](){
+        std::string styleCopy = style ? style : "";
+        RunOnceInImGuiThread([windowNameCopy,groupNameCopy,xValue,yValue,styleCopy](){
             PlotWindow* plotWindow = FindOrCreateWindow<PlotWindow>(windowNameCopy.c_str());
-            plotWindow->AddPlotValue(groupNameCopy.c_str(), yValue, xValue);
+            plotWindow->AddPlotValue(groupNameCopy.c_str(), yValue, xValue, styleCopy.empty() ? nullptr : styleCopy.c_str());
         });
     }
 }

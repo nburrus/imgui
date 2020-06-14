@@ -97,7 +97,7 @@ void workerThread1()
         
         for (int k = 0; k < 10; ++k)
         {
-            ImGui::CVLog::AddPlotValue(("PlotN - " + std::to_string(k)).c_str(), "Live", log(i+1+k), i);
+            ImGui::CVLog::AddPlotValue(("PlotN - " + std::to_string(k)).c_str(), "Live", log(i+1+k), i, "#00ff00ff");
             ImGui::CVLog::AddPlotValue(("PlotN - " + std::to_string(k)).c_str(), "GT", log(i+1+k)/2.f, i);
         }
         
