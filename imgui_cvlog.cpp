@@ -17,6 +17,7 @@
 #include <thread>
 #include <fstream>
 #include <filesystem>
+#include <unordered_map>
 
 namespace fs = std::filesystem;
 
@@ -96,6 +97,11 @@ public:
     
 public:
     const std::vector<std::unique_ptr<WindowData>>& windowsData() const { return _windowsData; };
+    
+    void AddMenuBarCallback(const std::string& name, const std::function<void(void)>& callback)
+    {
+        _menuBarCallbacks[name] = callback;
+    }
     
     WindowData& AddWindow (const char* windowName, std::unique_ptr<Window> windowPtr)
     {
@@ -270,14 +276,38 @@ public:
         auto& IO = ImGui::GetIO();
         ImGui::SetNextWindowPos(ImVec2(0,0), ImGuiCond_Always);
         ImGui::SetNextWindowSize(ImVec2(windowListWidth, IO.DisplaySize.y), ImGuiCond_Always);
-        if (ImGui::Begin("Window List", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_MenuBar))
+        if (ImGui::Begin("Window List",
+                         nullptr,
+                         ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_MenuBar))
         {
             bool openSavePopup = false;
             
             if (ImGui::BeginMenuBar())
             {
-                if (ImGui::BeginMenu("Preset"))
+                if (ImGui::BeginMenu("CVLog"))
                 {
+                    if (ImGui::BeginMenu("Windows"))
+                    {
+                        if (ImGui::MenuItem("Show All"))
+                        {
+                            for (const auto& winData : _windowsData)
+                                winData->isVisibleRef() = true;
+                        }
+
+                        if (ImGui::MenuItem("Hide All"))
+                        {
+                            for (const auto& winData : _windowsData)
+                                winData->isVisibleRef() = false;
+                        }
+                        
+                        if (ImGui::MenuItem("Tile Windows"))
+                        {
+                            TileAndScaleVisibleWindows();
+                        }
+                        
+                        ImGui::EndMenu();
+                    }
+                    
                     if (ImGui::MenuItem("Save Layout As..."))
                     {
                         openSavePopup = true;
@@ -302,27 +332,8 @@ public:
                     ImGui::EndMenu();
                 }
                 
-                if (ImGui::BeginMenu("Windows"))
-                {
-                    if (ImGui::MenuItem("Show All"))
-                    {
-                        for (const auto& winData : _windowsData)
-                            winData->isVisibleRef() = true;
-                    }
-
-                    if (ImGui::MenuItem("Hide All"))
-                    {
-                        for (const auto& winData : _windowsData)
-                            winData->isVisibleRef() = false;
-                    }
-                    
-                    if (ImGui::MenuItem("Tile Windows"))
-                    {
-                        TileAndScaleVisibleWindows();
-                    }
-                    
-                    ImGui::EndMenu();
-                }
+                for (const auto& it : _menuBarCallbacks)
+                    it.second();
                                     
                 // We need OpenPopup and BeginPopup to be at the same level.
                 if (openSavePopup)
@@ -526,6 +537,7 @@ private:
     std::vector<std::unique_ptr<Window>> _windows;
     std::vector<std::unique_ptr<WindowData>> _windowsData;
     std::vector<WindowCategory> _windowsPerCategory;
+    std::unordered_map<std::string, std::function<void(void)>> _menuBarCallbacks;
     char _pathBuffer[256];
 };
 
@@ -625,6 +637,14 @@ void SetWindowPreRenderCallback(const char* windowName,
         {
             winData.preRenderCallbacks.erase(callbackNameCopy);
         }
+    });
+}
+
+void AddMenuBarCallback(const char* name, const std::function<void(void)>& callback)
+{
+    std::string nameCopy = name;
+    RunOnceInImGuiThread([callback, nameCopy]() {
+        g_Context->windowManager.AddMenuBarCallback(nameCopy, callback);
     });
 }
 

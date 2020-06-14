@@ -173,6 +173,17 @@ void workerThread2()
     ImGui::CVLog::Init (self.window);
     ImGui::CVLog::Initialize();
     
+    ImGui::CVLog::AddMenuBarCallback("AppMenu", []() {
+        if (ImGui::BeginMenu("MyApp"))
+        {
+            if (ImGui::MenuItem("MyAction"))
+            {
+                fprintf(stderr, "MyAction triggered!\n");
+            }
+            ImGui::EndMenu();   
+        }
+    });
+    
     new std::thread([]() {
         workerThread1();
     });

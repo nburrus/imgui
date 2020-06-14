@@ -48,6 +48,11 @@ void SetWindowPreRenderCallback(const char* windowName,
                                 const std::function<void(void)>& callback);
 
 /*!
+ - Thread safety: any thread.
+ */
+void AddMenuBarCallback(const char* name, const std::function<void(void)>& callback);
+
+/*!
 - Thread safety: any thread.
 */
 void SetWindowProperties(const char* windowName,
