@@ -216,6 +216,9 @@ ImPlotLimits GetPlotLimits(int y_axis = -1);
 bool IsPlotQueried();
 /// Returns the current or most recent plot query bounds.
 ImPlotLimits GetPlotQuery(int y_axis = -1);
+/// Returns true if Auto-Fit was requested for the corresponding axix.
+bool IsXAxisAutoFitRequested();
+bool IsYAxisAutoFitRequested(int y_axis_in = -1);
 
 //-----------------------------------------------------------------------------
 // Plot Styling

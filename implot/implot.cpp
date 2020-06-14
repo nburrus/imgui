@@ -1790,6 +1790,19 @@ bool IsPlotQueried() {
     return gp.CurrentPlot->Queried;
 }
 
+bool IsXAxisAutoFitRequested()
+{
+    return gp.FitThisFrame && gp.FitX;
+}
+
+bool IsYAxisAutoFitRequested(int y_axis_in)
+{
+    IM_ASSERT_USER_ERROR(y_axis_in >= -1 && y_axis_in < MAX_Y_AXES, "y_axis needs to between -1 and MAX_Y_AXES");
+    IM_ASSERT_USER_ERROR(gp.CurrentPlot != NULL, "IsYAxisAutoFitRequested() Needs to be called between BeginPlot() and EndPlot()!");
+    const int y_axis = y_axis_in >= 0 ? y_axis_in : gp.CurrentPlot->CurrentYAxis;
+    return gp.FitThisFrame && gp.FitY[y_axis];
+}
+
 ImPlotLimits GetPlotQuery(int y_axis_in) {
     IM_ASSERT_USER_ERROR(y_axis_in >= -1 && y_axis_in < MAX_Y_AXES, "y_axis needs to between -1 and MAX_Y_AXES");
     IM_ASSERT_USER_ERROR(gp.CurrentPlot != NULL, "GetPlotQuery() Needs to be called between BeginPlot() and EndPlot()!");
