@@ -349,5 +349,88 @@ void AddPlotValue(const char* windowName,
     }
 }
 
+#pragma mark - String values
+
+class ValueListWindow : public Window
+{
+public:
+    void AddValue(const char* name, const char* value)
+    {
+        std::lock_guard<std::mutex> _ (concurrent.lock);
+        concurrent.valuesToUpdate.push_back({name, value});
+    }
+    
+    bool Begin(bool* closed) override
+    {
+        return ImGui::Begin(name(), closed, ImGuiWindowFlags_HorizontalScrollbar);
+    }
+    
+    void Render() override
+    {
+        {
+            std::lock_guard<std::mutex> _ (concurrent.lock);
+            _cacheOfValuesToUpdate.swap (concurrent.valuesToUpdate);
+        }
+        
+        for (const auto& it : _cacheOfValuesToUpdate)
+            _values[it.valueName] = it.value;
+        
+        _cacheOfValuesToUpdate.clear();
+        
+        Begin(nullptr);
+        
+        for (const auto& it : _values)
+        {
+            ImGui::Text("%s = %s", it.first.c_str(), it.second.c_str());
+        }
+        
+        ImGui::End();
+    }
+    
+private:
+    struct ValueToUpdate
+    {
+        std::string valueName;
+        std::string value;
+    };
+    
+private:
+    struct {
+        std::mutex lock;
+        std::vector<ValueToUpdate> valuesToUpdate;
+        ImGuiStorage existingGroups;
+    } concurrent;
+    
+    std::vector<ValueToUpdate> _cacheOfValuesToUpdate;
+    
+    std::unordered_map<std::string, std::string> _values;
+};
+
+void AddValue(const char* windowName,
+              const char* name,
+              const char* value)
+{
+    ValueListWindow* valuesWindow = FindWindow<ValueListWindow> (windowName);
+    
+    // The window exists, just update the data.
+    if (valuesWindow)
+    {
+        valuesWindow->AddValue(name, value);
+        return;
+    }
+    
+    // Need to create it, enqueue that in the list of tasks for the next frame;
+    {
+        std::string windowNameCopy = windowName;
+        std::string nameCopy = name;
+        std::string valueCopy = value;
+        RunOnceInImGuiThread([windowNameCopy,nameCopy,valueCopy](){
+            ValueListWindow* valuesWindow = FindOrCreateWindow<ValueListWindow>(windowNameCopy.c_str());
+            valuesWindow->AddValue(nameCopy.c_str(), valueCopy.c_str());
+        });
+    }
+}
+
+
 } // CVLog
 } // ImGui

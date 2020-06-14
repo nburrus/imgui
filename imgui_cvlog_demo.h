@@ -40,6 +40,11 @@ void AddPlotValue(const char* windowName,
                   double xValue,
                   const char* style = nullptr);
 
+// Strings
+
+void AddValue(const char* windowName,
+              const char* name,
+              const char* value);
 
 } // CVLog
 } // ImGui

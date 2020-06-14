@@ -96,6 +96,10 @@ void workerThread1()
             ImGui::CVLog::UpdateImage("VGAImage", imagePtr);
         }
         
+        ImGui::CVLog::AddValue("ValueList",
+                               "Thread1 Index",
+                               std::to_string(i).c_str());
+        
         for (int k = 0; k < 10; ++k)
         {
             ImGui::CVLog::AddPlotValue(("PlotN - " + std::to_string(k)).c_str(), "Live", log(i+1+k), i, "#00ff00ff");
@@ -117,6 +121,10 @@ void workerThread2()
     ImGui::CVLog::SetWindowPreRenderCallback("SmallImage with a very long name that won't fit", "ModifyOffset", [&offset]() {
         ImGui::SliderInt("Adjust offset", &offset, 0, 320);
     });
+    
+    ImGui::CVLog::AddValue("ValueList",
+                           "Thread2 Status",
+                           "Started");
     
     int i = 0;
     while (true)
@@ -141,6 +149,10 @@ void workerThread2()
         ImGui::CVLog::AddPlotValue("Plot1", "Live", log(i*i + 1), i);
         ImGui::CVLog::AddPlotValue("Plot1", "GT", log(i*i + 1) + 1, i);
         
+        ImGui::CVLog::AddValue("ValueList",
+                               "Thread2 Index",
+                               std::to_string(i).c_str());
+            
         ++i;
         std::this_thread::sleep_for(std::chrono::milliseconds(40));
     }
