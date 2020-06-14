@@ -416,21 +416,23 @@ public:
                     ImGui::MarkIniSettingsDirty();
                 }
                     
-                ImGui::Begin(winData->name().c_str(), &winData->isVisibleRef());
-                if (ImGui::IsItemHovered())
+                if (winData->window->Begin(&winData->isVisibleRef()))
                 {
-                    ImGui::BeginTooltip();
-                    ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-                    ImGui::TextUnformatted(winData->name().c_str());
-                    ImGui::TextUnformatted(winData->helpString.c_str());
-                    ImGui::PopTextWrapPos();
-                    ImGui::EndTooltip();
+                    if (ImGui::IsItemHovered())
+                    {
+                        ImGui::BeginTooltip();
+                        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+                        ImGui::TextUnformatted(winData->name().c_str());
+                        ImGui::TextUnformatted(winData->helpString.c_str());
+                        ImGui::PopTextWrapPos();
+                        ImGui::EndTooltip();
+                    }
                 }
                 ImGui::End();
                 
                 if (!winData->preRenderCallbacks.empty())
                 {
-                    if (ImGui::Begin(winData->name().c_str()))
+                    if (winData->window->Begin(nullptr))
                     {
                         for (const auto& it : winData->preRenderCallbacks)
                             it.second();

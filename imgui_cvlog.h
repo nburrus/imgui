@@ -68,6 +68,11 @@ class Window
 {
 public:
     virtual ~Window () {}
+    
+    /// Override this to pass custom flags.
+    virtual bool Begin(bool* closed) { return ImGui::Begin(name(), closed); }
+    
+    /// Implement ImGui rendering here. Called once per frame.
     virtual void Render() = 0;
     
     const char* name() const;

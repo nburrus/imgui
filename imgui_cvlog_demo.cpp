@@ -37,6 +37,18 @@ public:
         concurrent.image = newImage;
     }
     
+    bool Begin(bool* closed) override
+    {
+        // Uncomment along with the PopStyleVar to remove the extra padding.
+        // ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0,0));
+        
+        // Force no scrollbar.
+        bool active = ImGui::Begin(name(), closed, ImGuiWindowFlags_NoScrollbar);
+        
+        // ImGui::PopStyleVar();
+        return active;
+    }
+    
     void Render() override
     {
         ImagePtr imageToShow;
@@ -147,7 +159,7 @@ public:
         if (!concurrent.existingGroups.GetBool(groupId))
             concurrent.addedGroupsSinceLastFrame.push_back(groupName);
     }
-    
+        
     void Render() override
     {
         {
@@ -190,7 +202,7 @@ public:
         if (_groupData.empty())
             return;
                 
-        if (ImGui::Begin(name()))
+        if (Begin(nullptr))
         {
             ImPlot::SetNextPlotLimits(_dataBounds.xMin, _dataBounds.xMax, _dataBounds.yMin, _dataBounds.yMax, ImGuiCond_Always);
             if (ImPlot::BeginPlot("Line Plot", "x", "f(x)"))
