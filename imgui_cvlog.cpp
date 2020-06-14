@@ -306,14 +306,14 @@ public:
                 {
                     if (ImGui::MenuItem("Show All"))
                     {
-                        for (const auto& win : _windows)
-                            win->imGuiData->isVisibleRef() = true;
+                        for (const auto& winData : _windowsData)
+                            winData->isVisibleRef() = true;
                     }
 
                     if (ImGui::MenuItem("Hide All"))
                     {
-                        for (const auto& win : _windows)
-                            win->imGuiData->isVisibleRef() = false;
+                        for (const auto& winData : _windowsData)
+                            winData->isVisibleRef() = false;
                     }
                     
                     if (ImGui::MenuItem("Tile Windows"))
