@@ -216,8 +216,16 @@ public:
         {
             if (_autoFitEnabled)
             {
-                ImPlot::SetNextPlotLimitsX(_dataBounds.xMin, _dataBounds.xMax, ImGuiCond_Always);
-                ImPlot::SetNextPlotLimitsY(_dataBounds.yMin, _dataBounds.yMax, ImGuiCond_Always);
+                if (_previousLimits.X.Min > _dataBounds.xMin
+                    || _previousLimits.X.Max < _dataBounds.xMax
+                    || _previousLimits.Y.Min > _dataBounds.yMin
+                    || _previousLimits.Y.Max < _dataBounds.yMax)
+                {
+                    ImPlot::SetNextPlotLimits(_dataBounds.xMin,
+                                              _dataBounds.xMax*1.5,
+                                              _dataBounds.yMin < 0 ? _dataBounds.yMin*1.2 : _dataBounds.yMin * 0.8,
+                                              _dataBounds.yMax*1.2, ImGuiCond_Always);
+                }
             }
             
             ImVec2 plotSize = ImGui::GetContentRegionAvail();
@@ -238,6 +246,8 @@ public:
                     if (it.second.hasCustomLineColor)
                         ImPlot::PopStyleColor();
                 }
+                
+                _previousLimits = ImPlot::GetPlotLimits();
                 
                 ImPlot::EndPlot();
             }
@@ -309,6 +319,7 @@ private:
     } _dataBounds; // across all groups.
     
     bool _autoFitEnabled = true;
+    ImPlotLimits _previousLimits;
 };
 
 void AddPlotValue(const char* windowName,
